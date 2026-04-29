@@ -19,6 +19,18 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
     # cria pasta se não existir
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+    # 🔥 IDPOTÊNCIA (ANTES DE QUALQUER PROCESSAMENTO)
+    existing_job = db.query(ImportJob).filter(
+        ImportJob.file_name == file.filename
+    ).first()
+
+    if existing_job:
+        return {
+            "job_id": existing_job.id,
+            "status": existing_job.status,
+            "message": "Arquivo já importado anteriormente"
+        }
+
     # gera nome único
     file_id = str(uuid.uuid4())
     file_path = f"{UPLOAD_DIR}/{file_id}_{file.filename}"
@@ -60,13 +72,13 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
             print(row.to_dict())
 
-            # atualiza progresso a cada 10 linhas (evita sobrecarregar o banco)
+            # atualiza progresso a cada 10 linhas
             if processed % 10 == 0:
                 job.processed_rows = processed
                 db.commit()
                 print(f"Processado: {processed}/{total_rows}")
 
-        # garante que salva o final certinho
+        # finalização
         job.processed_rows = total_rows
         job.status = "done"
         db.commit()
