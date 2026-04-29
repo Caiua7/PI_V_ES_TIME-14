@@ -1,0 +1,1 @@
+# Ponto de entrada que inicia o FastAPI

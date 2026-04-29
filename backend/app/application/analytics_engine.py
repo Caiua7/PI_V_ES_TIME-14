@@ -1,0 +1,1 @@
+# Agregação de dados para os gráficos

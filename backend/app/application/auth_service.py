@@ -1,0 +1,1 @@
+# Lógica de tokens e senhas

@@ -1,0 +1,1 @@
+# Ferramentas de Criptografia (Argon2/JWT)

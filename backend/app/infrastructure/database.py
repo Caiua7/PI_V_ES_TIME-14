@@ -1,0 +1,1 @@
+# Configuração da ligação ao Postgres/Supabase
