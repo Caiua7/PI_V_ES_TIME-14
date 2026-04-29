@@ -8,6 +8,9 @@ from app.api.v1.api import api_router
 
 app = FastAPI(title="NeoPrice API", version="1.0.0")
 
+@app.get("/")
+def read_root():
+    return {"message": "Bem-vindo à API! Acesse /docs para ver as rotas disponíveis."}  #esta aqui para teste apenas
 
 @app.on_event("startup")
 def on_startup():
