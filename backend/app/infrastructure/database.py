@@ -3,7 +3,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # URL do banco (ajustar depois se precisar)
-DATABASE_URL = "sqlite:///./test.db"
+import os
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 
 # Engine
 engine = create_engine(
