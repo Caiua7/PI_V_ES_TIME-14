@@ -18,5 +18,6 @@ def get_job_status(job_id: str, db: Session = Depends(get_db)):
     "id": job.id,
     "status": job.status,
     "total_rows": job.total_rows,
-    "processed_rows": job.processed_rows
+    "processed_rows": job.processed_rows,
+    "error_rows": job.error_rows  # 🔥 ADICIONA ISSO
 }
