@@ -15,6 +15,8 @@ def get_job_status(job_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Job não encontrado")
 
     return {
-        "id": job.id,
-        "status": job.status
-    }
+    "id": job.id,
+    "status": job.status,
+    "total_rows": job.total_rows,
+    "processed_rows": job.processed_rows
+}

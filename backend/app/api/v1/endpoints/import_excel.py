@@ -1,10 +1,9 @@
-# Pessoa 3: Excel/Jobs
-
 from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 import uuid
 import shutil
 import os
+import pandas as pd
 
 from app.infrastructure.database import get_db
 from app.domain.models.import_job import ImportJob
@@ -33,11 +32,49 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
         id=file_id,
         file_name=file.filename,
         file_path=file_path,
-        status="pending"
+        status="pending",
+        total_rows=0,
+        processed_rows=0
     )
 
     db.add(job)
     db.commit()
+
+    # 🔥 INÍCIO DO PROCESSAMENTO
+    try:
+        job.status = "processing"
+        db.commit()
+
+        df = pd.read_excel(file_path)
+
+        total_rows = len(df)
+        job.total_rows = total_rows
+        db.commit()
+
+        print(f"Total de linhas: {total_rows}")
+
+        processed = 0
+
+        for index, row in df.iterrows():
+            processed += 1
+
+            print(row.to_dict())
+
+            # atualiza progresso a cada 10 linhas (evita sobrecarregar o banco)
+            if processed % 10 == 0:
+                job.processed_rows = processed
+                db.commit()
+                print(f"Processado: {processed}/{total_rows}")
+
+        # garante que salva o final certinho
+        job.processed_rows = total_rows
+        job.status = "done"
+        db.commit()
+
+    except Exception as e:
+        job.status = "error"
+        db.commit()
+        print("Erro ao processar:", e)
 
     return {
         "job_id": job.id,
