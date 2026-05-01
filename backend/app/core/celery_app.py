@@ -1,0 +1,10 @@
+from celery import Celery
+
+celery_app = Celery(
+    "worker",
+    broker="redis://localhost:6379/0",
+    backend="redis://localhost:6379/0",
+    include=["app.tasks.import_tasks"]  # 🔥 ESSA LINHA RESOLVE
+)
+
+app = celery_app
