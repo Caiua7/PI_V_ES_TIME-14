@@ -4,7 +4,7 @@ import uuid
 import shutil
 import os
 import pandas as pd
-from datetime import datetime  # 🔥 IMPORTANTE
+from datetime import datetime
 import time
 
 from app.infrastructure.database import get_db
@@ -13,6 +13,7 @@ from app.domain.models.import_job import ImportJob
 router = APIRouter()
 
 UPLOAD_DIR = "uploads"
+
 
 def cleanup_old_files(directory, max_age_seconds=86400):
     now = time.time()
@@ -30,7 +31,7 @@ def cleanup_old_files(directory, max_age_seconds=86400):
 
 @router.post("/pricing/import-excel")
 def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    
+
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     cleanup_old_files(UPLOAD_DIR)
@@ -67,7 +68,7 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
     db.commit()
 
     try:
-        # 🔥 INÍCIO DO PROCESSAMENTO
+        # 🔥 INÍCIO
         job.status = "processing"
         job.started_at = datetime.utcnow().replace(microsecond=0)
         db.commit()
@@ -82,14 +83,21 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
         processed = 0
         errors = 0
+        error_rows_list = []  # 🔥 NOVO
 
         for index, row in df.iterrows():
             try:
                 processed += 1
+
+                # 👉 opcional: erro fake pra teste
+                if index == 2:
+                    raise Exception("erro teste")
+
                 print(row.to_dict())
 
             except Exception:
                 errors += 1
+                error_rows_list.append(row.to_dict())  # 🔥 SALVA ERRO
 
             if processed % 10 == 0:
                 job.processed_rows = processed
@@ -99,6 +107,15 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
         # 🔥 FINALIZAÇÃO
         job.processed_rows = total_rows
         job.error_rows = errors
+
+        # 🔥 GERAR RELATÓRIO DE ERRO
+        if error_rows_list:
+            error_file_path = f"{UPLOAD_DIR}/errors_{job.id}.csv"
+
+            df_errors = pd.DataFrame(error_rows_list)
+            df_errors.to_csv(error_file_path, index=False)
+
+            job.error_report_path = error_file_path
 
         if errors > 0:
             job.status = "error"
