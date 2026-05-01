@@ -1,1 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Banco
+test.db
+
+# Uploads
+uploads/
+
+# Env
+.env
+
+# Mac
 .DS_Store

@@ -480,7 +480,7 @@ Este documento e a referencia principal para implementacao do backend do NeoPric
 
 ## 8.2 Separacao das Tasks por 4 Pessoas (Execucao Paralela)
 
-### Pessoa 1 - Auth e Seguranca
+### Pessoa 1 - Auth e Seguranca (Gustavo)
 1. Endpoints `register`, `login`, `me`, `refresh`, `logout`.
 2. Endpoints `forgot-password` e `reset-password`.
 3. Hash de senha (`argon2id`/`bcrypt`) e rotacao de refresh token.
@@ -488,7 +488,7 @@ Este documento e a referencia principal para implementacao do backend do NeoPric
 5. Matriz de permissao por role e middleware de autorizacao.
 6. Auditoria de eventos de autenticacao.
 
-### Pessoa 2 - Dados de Pricing e Depara
+### Pessoa 2 - Dados de Pricing e Depara (Mateus)
 1. Modelagem e migracoes de `pricing_history` e `depara_mappings`.
 2. Para inserts iniciais do banco (seed/homologacao), usar obrigatoriamente o arquivo "/BD - Histórico de preços.xlsx` como fonte oficial dos dados.
 3. `GET /pricing/history` com filtros, ordenacao e validacoes.
@@ -497,7 +497,7 @@ Este documento e a referencia principal para implementacao do backend do NeoPric
 6. Logs de auditoria para alteracoes de pricing/depara.
 7. Seeds de dados minimos para homologacao.
 
-### Pessoa 3 - Importacao Excel e Jobs
+### Pessoa 3 - Importacao Excel e Jobs (Caiuã)
 1. Modelagem e migracoes de `import_jobs`.
 2. Endpoint `POST /pricing/import-excel` e `GET /pricing/import-excel/{job_id}`.
 3. Fila de processamento (worker + broker) com retry.
@@ -505,7 +505,7 @@ Este documento e a referencia principal para implementacao do backend do NeoPric
 5. Armazenamento de arquivos (local/S3), retencao e limpeza.
 6. Relatorio de erros de importacao e status detalhado.
 
-### Pessoa 4 - Analytics, Qualidade e Operacao
+### Pessoa 4 - Analytics, Qualidade e Operacao (Marcelo)
 1. `GET /analytics/evolution` (modo SKU e agregado).
 2. `GET /analytics/cards` com regras condicionais.
 3. Otimizacao de consultas (indices e possivel materialized view).
