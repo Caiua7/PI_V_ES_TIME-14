@@ -90,8 +90,8 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
                 processed += 1
 
                 # 👉 opcional: erro fake pra teste
-                if index == 2:
-                    raise Exception("erro teste")
+           #     if index == 2:
+           #         raise Exception("erro teste")
 
                 print(row.to_dict())
 
