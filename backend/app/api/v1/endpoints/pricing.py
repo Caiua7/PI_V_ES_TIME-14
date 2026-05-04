@@ -1,10 +1,12 @@
-# Pessoa 2: CRUD e Histórico
-
+"""
+Pessoa 2: GET, POST, PUT, DELETE /pricing/history
+"""
+ 
 from __future__ import annotations
  
 from typing import Optional
  
-from fastapi import APIRouter, Query, Header
+from fastapi import APIRouter, Header, Query, Request
  
 from app.application.pricing_service import PricingService
 from app.models.schemas.pricing import (
@@ -32,16 +34,16 @@ router = APIRouter()
     description="Retorna registros ativos com filtros combinados e ordenação.",
 )
 def list_pricing_history(
-    client:       Optional[str] = Query(None, description="Filtrar por cliente"),
-    sku:          Optional[str] = Query(None, description="Filtrar por SKU"),
-    category:     Optional[str] = Query(None, description="Filtrar por categoria"),
-    subcategory:  Optional[str] = Query(None, description="Filtrar por subcategoria"),
-    manager:      Optional[str] = Query(None, description="Filtrar por gestora"),
-    status:       Optional[str] = Query(None, description="Filtrar por status"),
-    datasul_code: Optional[str] = Query(None, description="Filtrar por código Datasul"),
+    client:       Optional[str] = Query(None),
+    sku:          Optional[str] = Query(None),
+    category:     Optional[str] = Query(None),
+    subcategory:  Optional[str] = Query(None),
+    manager:      Optional[str] = Query(None),
+    status:       Optional[str] = Query(None),
+    datasul_code: Optional[str] = Query(None),
     date_from:    Optional[str] = Query(None, description="Mês inicial YYYY-MM"),
     date_to:      Optional[str] = Query(None, description="Mês final YYYY-MM"),
-    sort_by:      Optional[str] = Query("created_at", description="Campo para ordenação"),
+    sort_by:      Optional[str] = Query("created_at"),
     sort_order:   Optional[str] = Query("desc", description="asc ou desc"),
 ):
     filters = PricingHistoryFilters(
@@ -76,14 +78,19 @@ def list_pricing_history(
     response_model=PricingHistoryRecord,
     status_code=201,
     summary="Criar registro de pricing",
-    description="Insere um novo registro em pricing_history.",
 )
 def create_pricing(
     payload: PricingHistoryCreate,
-    #TODO: esperar Gustavo fazer prara mudar aqui 
+    request: Request,
+    # TODO: substituir por Depends(get_current_user) quando Auth (Pessoa 1) estiver pronto
     x_user_id: Optional[str] = Header(None, description="ID do usuário autenticado"),
 ):
-    record = PricingService.create(payload, user_id=x_user_id)
+    record = PricingService.create(
+        payload,
+        user_id=x_user_id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
     return PricingHistoryRecord(**record)
  
  
@@ -100,10 +107,17 @@ def create_pricing(
 def update_pricing(
     record_id: str,
     payload: PricingHistoryUpdate,
-    #TODO: esperar Gustavo fazer prara mudar aqui 
+    request: Request,
+    # TODO: substituir por Depends(get_current_user) quando Auth (Pessoa 1) estiver pronto
     x_user_id: Optional[str] = Header(None, description="ID do usuário autenticado"),
 ):
-    record = PricingService.update(record_id, payload, user_id=x_user_id)
+    record = PricingService.update(
+        record_id,
+        payload,
+        user_id=x_user_id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
     return PricingHistoryRecord(**record)
  
  
@@ -115,14 +129,16 @@ def update_pricing(
     "/history/{record_id}",
     response_model=MessageResponse,
     summary="Deletar registro de pricing (soft delete)",
-    description=(
-        "Soft delete: preenche deleted_at. O registro permanece no banco "
-        "mas não aparece nas listagens."
-    ),
 )
 def delete_pricing(
     record_id: str,
-    #TODO: esperar Gustavo fazer prara mudar aqui 
+    request: Request,
+    # TODO: substituir por Depends(get_current_user) quando Auth (Pessoa 1) estiver pronto
     x_user_id: Optional[str] = Header(None, description="ID do usuário autenticado"),
 ):
-    return PricingService.soft_delete(record_id, user_id=x_user_id)
+    return PricingService.soft_delete(
+        record_id,
+        user_id=x_user_id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
