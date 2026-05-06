@@ -3,6 +3,9 @@ Pessoa 2: GET, POST, PUT, DELETE /pricing/history
 """
  
 from __future__ import annotations
+
+from pydantic import ValidationError
+from fastapi import HTTPException
  
 from typing import Optional
  
@@ -46,15 +49,18 @@ def list_pricing_history(
     sort_by:      Optional[str] = Query("created_at"),
     sort_order:   Optional[str] = Query("desc", description="asc ou desc"),
 ):
-    filters = PricingHistoryFilters(
-        client=client, sku=sku, category=category, subcategory=subcategory,
-        manager=manager, status=status, datasul_code=datasul_code,
-        date_from=date_from, date_to=date_to,
-        sort_by=sort_by, sort_order=sort_order,
-    )
- 
+    try:
+        filters = PricingHistoryFilters(
+            client=client, sku=sku, category=category, subcategory=subcategory,
+            manager=manager, status=status, datasul_code=datasul_code,
+            date_from=date_from, date_to=date_to,
+            sort_by=sort_by, sort_order=sort_order,
+        )
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
     records = PricingService.list_history(filters)
- 
+
     return PricingHistoryResponse(
         data=[PricingHistoryRecord(**r) for r in records],
         meta=PricingHistoryMeta(
