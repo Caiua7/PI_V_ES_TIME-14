@@ -70,7 +70,7 @@ class PricingHistoryCreate(BaseModel):
     sku:               str             = Field(..., min_length=1, max_length=100)
     datasul_code:      Optional[str]   = Field(None, max_length=100)
     category:          str             = Field(..., min_length=1, max_length=120)
-    subcategory:       str             = Field(..., min_length=1, max_length=120)
+    subcategory:       Optional[str]   = Field(None, max_length=120)
     size:              Optional[str]   = Field(None, max_length=60)
     manager:           Optional[str]   = Field(None, max_length=120)
     channel:           Optional[str]   = Field(None, max_length=60)
@@ -108,7 +108,7 @@ class PricingHistoryUpdate(BaseModel):
     sku:               Optional[str]   = Field(None, min_length=1, max_length=100)
     datasul_code:      Optional[str]   = Field(None, max_length=100)
     category:          Optional[str]   = Field(None, min_length=1, max_length=120)
-    subcategory:       Optional[str]   = Field(None, min_length=1, max_length=120)
+    subcategory:       Optional[str]   = Field(None, max_length=120)
     size:              Optional[str]   = Field(None, max_length=60)
     manager:           Optional[str]   = Field(None, max_length=120)
     channel:           Optional[str]   = Field(None, max_length=60)
@@ -140,8 +140,8 @@ class PricingHistoryRecord(BaseModel):
     cliente:           str
     sku:               str
     datasul_code:      Optional[str]
-    category:          str
-    subcategory:       str
+    category:          Optional[str]   # ← nullable (alguns produtos sem categoria)
+    subcategory:       Optional[str]   # ← nullable (alguns produtos sem subcategoria)
     size:              Optional[str]
     manager:           Optional[str]
     channel:           Optional[str]
