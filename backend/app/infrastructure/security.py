@@ -10,11 +10,6 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 
-
-# ------------------------------------------------------------------ #
-#  Hash de senha (argon2id)                                           #
-# ------------------------------------------------------------------ #
-
 _pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
@@ -25,10 +20,6 @@ def hash_password(plain: str) -> str:
 def verify_password(plain: str, hashed: str) -> bool:
     return _pwd_context.verify(plain, hashed)
 
-
-# ------------------------------------------------------------------ #
-#  JWT — access token (15 min) e refresh token (7 dias)              #
-# ------------------------------------------------------------------ #
 
 def create_access_token(data: dict) -> str:
     payload = data.copy()
@@ -57,10 +48,6 @@ def create_refresh_token(data: dict) -> str:
 
 
 def decode_token(token: str, expected_type: str | None = None) -> dict:
-    """
-    Decodifica e valida um JWT. Lança 401 se inválido ou expirado.
-    Passa expected_type="access" ou "refresh" para validar o tipo do token.
-    """
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
     except JWTError:
@@ -79,11 +66,6 @@ def decode_token(token: str, expected_type: str | None = None) -> dict:
 
     return payload
 
-
-# ------------------------------------------------------------------ #
-#  Hash de token para armazenamento seguro no banco                   #
-#  Refresh tokens e reset tokens nunca são salvos em texto claro.    #
-# ------------------------------------------------------------------ #
 
 def hash_token_for_storage(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode()).hexdigest()

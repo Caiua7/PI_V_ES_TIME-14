@@ -1,7 +1,3 @@
-"""
-Schemas Pydantic — Auth
-Validações de entrada e contratos de resposta para autenticação.
-"""
 from __future__ import annotations
 
 import re
@@ -9,12 +5,6 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-
-# ------------------------------------------------------------------ #
-#  Constantes                                                          #
-# ------------------------------------------------------------------ #
-
-# Letra obrigatória + dígito obrigatório + mínimo 8 caracteres
 _SENHA_REGEX = re.compile(r"^(?=.*[A-Za-z])(?=.*\d).{8,}$")
 
 
@@ -24,18 +14,10 @@ def _validate_senha(v: str) -> str:
     return v
 
 
-# ------------------------------------------------------------------ #
-#  Request — POST /auth/login                                          #
-# ------------------------------------------------------------------ #
-
 class LoginRequest(BaseModel):
     email: EmailStr
     senha: str = Field(..., min_length=1)
 
-
-# ------------------------------------------------------------------ #
-#  Request — POST /auth/register                                       #
-# ------------------------------------------------------------------ #
 
 class RegisterRequest(BaseModel):
     nome:      str           = Field(..., min_length=1, max_length=150)
@@ -50,17 +32,9 @@ class RegisterRequest(BaseModel):
         return _validate_senha(v)
 
 
-# ------------------------------------------------------------------ #
-#  Request — POST /auth/forgot-password                                #
-# ------------------------------------------------------------------ #
-
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
-
-# ------------------------------------------------------------------ #
-#  Request — POST /auth/reset-password                                 #
-# ------------------------------------------------------------------ #
 
 class ResetPasswordRequest(BaseModel):
     token:      str = Field(..., min_length=1)
@@ -72,17 +46,9 @@ class ResetPasswordRequest(BaseModel):
         return _validate_senha(v)
 
 
-# ------------------------------------------------------------------ #
-#  Request — POST /auth/refresh                                        #
-# ------------------------------------------------------------------ #
-
 class RefreshRequest(BaseModel):
     refresh_token: str = Field(..., min_length=1)
 
-
-# ------------------------------------------------------------------ #
-#  Response — perfil do usuário (compartilhado entre endpoints)        #
-# ------------------------------------------------------------------ #
 
 class UsuarioResponse(BaseModel):
     id:        str
@@ -95,10 +61,6 @@ class UsuarioResponse(BaseModel):
         from_attributes = True
 
 
-# ------------------------------------------------------------------ #
-#  Response — POST /auth/login                                         #
-# ------------------------------------------------------------------ #
-
 class LoginResponse(BaseModel):
     access_token:  str
     refresh_token: str
@@ -106,10 +68,6 @@ class LoginResponse(BaseModel):
     expires_in:    int
     usuario:       UsuarioResponse
 
-
-# ------------------------------------------------------------------ #
-#  Response — POST /auth/register                                      #
-# ------------------------------------------------------------------ #
 
 class RegisterResponse(BaseModel):
     id:        str
@@ -123,19 +81,11 @@ class RegisterResponse(BaseModel):
         from_attributes = True
 
 
-# ------------------------------------------------------------------ #
-#  Response — POST /auth/refresh                                       #
-# ------------------------------------------------------------------ #
-
 class RefreshResponse(BaseModel):
     access_token: str
     token_type:   str = "bearer"
     expires_in:   int
 
-
-# ------------------------------------------------------------------ #
-#  Response — POST /auth/forgot-password e POST /auth/logout           #
-# ------------------------------------------------------------------ #
 
 class AuthMessageResponse(BaseModel):
     message: str
