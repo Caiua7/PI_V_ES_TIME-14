@@ -1,12 +1,17 @@
 # Ponto de entrada que inicia o FastAPI
 
 from fastapi import FastAPI
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.infrastructure.database import Base, engine
 from app.domain.models.import_job import ImportJob
 from app.api.v1.api import api_router
+from app.core.limiter import limiter
 
 app = FastAPI(title="NeoPrice API", version="1.0.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.get("/")
 def read_root():

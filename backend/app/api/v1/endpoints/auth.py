@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.api.dependencies import get_current_user
 from app.application.auth_service import AuthService
+from app.core.limiter import limiter
 from app.models.schemas.auth import (
     AuthMessageResponse,
     ForgotPasswordRequest,
@@ -26,7 +27,8 @@ def register(payload: RegisterRequest):
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(payload: LoginRequest):
+@limiter.limit("5/minute")
+def login(request: Request, payload: LoginRequest):
     return AuthService.login(payload)
 
 
@@ -47,7 +49,8 @@ def logout(payload: RefreshRequest):
 
 
 @router.post("/forgot-password", response_model=AuthMessageResponse, status_code=202)
-def forgot_password(payload: ForgotPasswordRequest):
+@limiter.limit("3/minute")
+def forgot_password(request: Request, payload: ForgotPasswordRequest):
     AuthService.forgot_password(payload)
     return AuthMessageResponse(message="Se o e-mail existir, enviaremos o link de recuperação.")
 
