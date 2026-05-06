@@ -1,22 +1,36 @@
-# Pessoa 4: Gráficos e KPIs
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+from typing import Optional
 
-from fastapi import APIRouter
-from typing import Any
+from app.api.dependencies import get_db
+from app.application.analytics_engine import AnalyticsEngine
+from app.domain.models.schemas.analytics import (
+    AnalyticsEvolutionResponse,
+    AnalyticsCardsResponse
+)
 
-# Criando o roteador que o api.py está procurando
 router = APIRouter()
 
-@router.get("/evolution", response_model=Any)
-def get_evolution_data():
+@router.get("/evolution", response_model=AnalyticsEvolutionResponse)
+def get_pricing_evolution(
+    sku: Optional[str] = Query(None, description="Filtrar por um SKU específico"),
+    category: Optional[str] = Query(None, description="Filtrar por uma categoria"),
+    db: Session = Depends(get_db)
+):
     """
-    Endpoint inicial para os gráficos de evolução de preços.
-    Por enquanto retorna apenas um status de teste.
+    Retorna a série histórica de preços e margens para os gráficos.
     """
-    return {"message": "Analytics Evolution Mock"}
+    engine = AnalyticsEngine(db)
+    return engine.get_evolution(sku=sku, category=category)
 
-@router.get("/cards", response_model=Any)
-def get_card_data():
+@router.get("/cards", response_model=AnalyticsCardsResponse)
+def get_dashboard_cards(
+    sku: Optional[str] = Query(None, description="Filtrar KPIs por SKU"),
+    category: Optional[str] = Query(None, description="Filtrar KPIs por categoria"),
+    db: Session = Depends(get_db)
+):
     """
-    Endpoint para os KPIs do topo da página.
+    Retorna os KPIs principais (Preço Médio, Margem, etc) para os cards do topo.
     """
-    return {"message": "Analytics Cards Mock"}
+    engine = AnalyticsEngine(db)
+    return engine.get_cards(sku=sku, category=category)
