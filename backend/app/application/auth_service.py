@@ -7,6 +7,7 @@ from uuid import uuid4
 from fastapi import HTTPException, status
 
 from app.core.config import settings
+from app.infrastructure.audit import log_auth_event
 from app.infrastructure.security import (
     create_access_token,
     create_refresh_token,
@@ -34,11 +35,13 @@ _TABLE_RESET_TOKENS = "password_reset_tokens"
 
 _DUMMY_HASH = hash_password("dummy-timing-protection-xK9#mP2$")
 
+_Ctx = dict[str, str | None]
+
 
 class AuthService:
 
     @staticmethod
-    def register(payload: RegisterRequest) -> RegisterResponse:
+    def register(payload: RegisterRequest, ctx: _Ctx | None = None) -> RegisterResponse:
         allowed_domains = settings.get_allowed_domains()
         if allowed_domains:
             domain = str(payload.email).split("@")[-1].lower()
@@ -78,6 +81,14 @@ class AuthService:
             )
 
         user = response.data[0]
+        _c = ctx or {}
+        log_auth_event(
+            "AUTH_REGISTER",
+            user_id=user["id"],
+            ip_address=_c.get("ip_address"),
+            user_agent=_c.get("user_agent"),
+            request_id=_c.get("request_id"),
+        )
         return RegisterResponse(
             id=user["id"],
             nome=user["nome"],
@@ -88,7 +99,7 @@ class AuthService:
         )
 
     @staticmethod
-    def login(payload: LoginRequest) -> LoginResponse:
+    def login(payload: LoginRequest, ctx: _Ctx | None = None) -> LoginResponse:
         result = (
             supabase.table(_TABLE_USERS)
             .select("*")
@@ -102,6 +113,14 @@ class AuthService:
         senha_correta = verify_password(payload.senha, stored_hash)
 
         if not user or not senha_correta:
+            _c = ctx or {}
+            log_auth_event(
+                "AUTH_LOGIN_FAILURE",
+                ip_address=_c.get("ip_address"),
+                user_agent=_c.get("user_agent"),
+                request_id=_c.get("request_id"),
+                metadata={"email": str(payload.email)},
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Credenciais inválidas.",
@@ -127,6 +146,14 @@ class AuthService:
             }
         ).execute()
 
+        _c = ctx or {}
+        log_auth_event(
+            "AUTH_LOGIN_SUCCESS",
+            user_id=user["id"],
+            ip_address=_c.get("ip_address"),
+            user_agent=_c.get("user_agent"),
+            request_id=_c.get("request_id"),
+        )
         return LoginResponse(
             access_token=access_token,
             refresh_token=refresh_token,
@@ -198,14 +225,21 @@ class AuthService:
         )
 
     @staticmethod
-    def logout(raw_refresh_token: str) -> None:
+    def logout(raw_refresh_token: str, ctx: _Ctx | None = None) -> None:
         token_hash = hash_token_for_storage(raw_refresh_token)
         supabase.table(_TABLE_REFRESH_TOKENS).update(
             {"revoked_at": datetime.now(timezone.utc).isoformat()}
         ).eq("token_hash", token_hash).is_("revoked_at", "null").execute()
+        _c = ctx or {}
+        log_auth_event(
+            "AUTH_LOGOUT",
+            ip_address=_c.get("ip_address"),
+            user_agent=_c.get("user_agent"),
+            request_id=_c.get("request_id"),
+        )
 
     @staticmethod
-    def forgot_password(payload: ForgotPasswordRequest) -> None:
+    def forgot_password(payload: ForgotPasswordRequest, ctx: _Ctx | None = None) -> None:
         result = (
             supabase.table(_TABLE_USERS)
             .select("id")
@@ -230,9 +264,17 @@ class AuthService:
         ).execute()
 
         print(f"[DEV] Token de reset para {payload.email}: {raw_token}")
+        _c = ctx or {}
+        log_auth_event(
+            "AUTH_FORGOT_PASSWORD",
+            user_id=user_id,
+            ip_address=_c.get("ip_address"),
+            user_agent=_c.get("user_agent"),
+            request_id=_c.get("request_id"),
+        )
 
     @staticmethod
-    def reset_password(payload: ResetPasswordRequest) -> None:
+    def reset_password(payload: ResetPasswordRequest, ctx: _Ctx | None = None) -> None:
         token_hash = hash_token_for_storage(payload.token)
         now = datetime.now(timezone.utc).isoformat()
 
@@ -259,3 +301,11 @@ class AuthService:
         supabase.table(_TABLE_RESET_TOKENS).update(
             {"used_at": now}
         ).eq("id", stored["id"]).execute()
+        _c = ctx or {}
+        log_auth_event(
+            "AUTH_RESET_PASSWORD",
+            user_id=stored["user_id"],
+            ip_address=_c.get("ip_address"),
+            user_agent=_c.get("user_agent"),
+            request_id=_c.get("request_id"),
+        )
