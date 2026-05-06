@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
+from fastapi import APIRouter, Depends
 
-from fastapi import APIRouter, Header
-
+from app.api.dependencies import get_current_user
 from app.application.auth_service import AuthService
-from app.infrastructure.security import decode_token
 from app.models.schemas.auth import (
     AuthMessageResponse,
     ForgotPasswordRequest,
@@ -33,10 +31,8 @@ def login(payload: LoginRequest):
 
 
 @router.get("/me", response_model=UsuarioResponse)
-def me(authorization: Optional[str] = Header(None)):
-    raw = authorization.removeprefix("Bearer ").strip() if authorization else ""
-    claims = decode_token(raw, expected_type="access")
-    return AuthService.get_current_user(claims["sub"])
+def me(current_user: UsuarioResponse = Depends(get_current_user)):
+    return current_user
 
 
 @router.post("/refresh", response_model=RefreshResponse)
