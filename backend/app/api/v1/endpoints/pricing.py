@@ -1,17 +1,18 @@
 """
-Pessoa 2: GET, POST, PUT, DELETE /pricing/history
+Endpoints — /api/v1/pricing
 """
  
 from __future__ import annotations
-
-from pydantic import ValidationError
-from fastapi import HTTPException
  
 from typing import Optional
  
-from fastapi import APIRouter, Header, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
+from pydantic import ValidationError
+from fastapi import HTTPException
  
+from app.api.dependencies import get_current_user, require_role
 from app.application.pricing_service import PricingService
+from app.models.schemas.auth import UsuarioResponse
 from app.models.schemas.pricing import (
     FiltersApplied,
     MessageResponse,
@@ -28,6 +29,7 @@ router = APIRouter()
  
 # ------------------------------------------------------------------ #
 #  GET /pricing/history                                                #
+#  Qualquer usuário autenticado pode listar                            #
 # ------------------------------------------------------------------ #
  
 @router.get(
@@ -48,6 +50,7 @@ def list_pricing_history(
     date_to:      Optional[str] = Query(None, description="Mês final YYYY-MM"),
     sort_by:      Optional[str] = Query("created_at"),
     sort_order:   Optional[str] = Query("desc", description="asc ou desc"),
+    current_user: UsuarioResponse = Depends(get_current_user),
 ):
     try:
         filters = PricingHistoryFilters(
@@ -58,9 +61,9 @@ def list_pricing_history(
         )
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
-
+ 
     records = PricingService.list_history(filters)
-
+ 
     return PricingHistoryResponse(
         data=[PricingHistoryRecord(**r) for r in records],
         meta=PricingHistoryMeta(
@@ -77,6 +80,7 @@ def list_pricing_history(
  
 # ------------------------------------------------------------------ #
 #  POST /pricing/history                                               #
+#  Apenas pricing e admin podem criar                                  #
 # ------------------------------------------------------------------ #
  
 @router.post(
@@ -88,12 +92,11 @@ def list_pricing_history(
 def create_pricing(
     payload: PricingHistoryCreate,
     request: Request,
-    # TODO: substituir por Depends(get_current_user) quando Auth (Pessoa 1) estiver pronto
-    x_user_id: Optional[str] = Header(None, description="ID do usuário autenticado"),
+    current_user: UsuarioResponse = Depends(require_role("pricing", "admin")),
 ):
     record = PricingService.create(
         payload,
-        user_id=x_user_id,
+        user_id=current_user.id,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
@@ -102,6 +105,7 @@ def create_pricing(
  
 # ------------------------------------------------------------------ #
 #  PUT /pricing/history/{id}                                           #
+#  Apenas pricing e admin podem editar                                 #
 # ------------------------------------------------------------------ #
  
 @router.put(
@@ -114,13 +118,12 @@ def update_pricing(
     record_id: str,
     payload: PricingHistoryUpdate,
     request: Request,
-    # TODO: substituir por Depends(get_current_user) quando Auth (Pessoa 1) estiver pronto
-    x_user_id: Optional[str] = Header(None, description="ID do usuário autenticado"),
+    current_user: UsuarioResponse = Depends(require_role("pricing", "admin")),
 ):
     record = PricingService.update(
         record_id,
         payload,
-        user_id=x_user_id,
+        user_id=current_user.id,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
@@ -129,6 +132,7 @@ def update_pricing(
  
 # ------------------------------------------------------------------ #
 #  DELETE /pricing/history/{id}                                        #
+#  Apenas admin pode deletar                                           #
 # ------------------------------------------------------------------ #
  
 @router.delete(
@@ -139,12 +143,11 @@ def update_pricing(
 def delete_pricing(
     record_id: str,
     request: Request,
-    # TODO: substituir por Depends(get_current_user) quando Auth (Pessoa 1) estiver pronto
-    x_user_id: Optional[str] = Header(None, description="ID do usuário autenticado"),
+    current_user: UsuarioResponse = Depends(require_role("admin")),
 ):
     return PricingService.soft_delete(
         record_id,
-        user_id=x_user_id,
+        user_id=current_user.id,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )

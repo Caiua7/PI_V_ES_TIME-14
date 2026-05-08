@@ -1,14 +1,16 @@
 """
-Pessoa 2: POST e GET /depara
+Endpoints — /api/v1/depara
 """
  
 from __future__ import annotations
  
 from typing import Optional
  
-from fastapi import APIRouter, Header, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
  
+from app.api.dependencies import get_current_user, require_role
 from app.application.depara_service import DeparaService
+from app.models.schemas.auth import UsuarioResponse
 from app.models.schemas.depara import (
     DeparaCreate,
     DeparaFilters,
@@ -21,6 +23,7 @@ router = APIRouter()
  
 # ------------------------------------------------------------------ #
 #  POST /depara                                                         #
+#  Apenas pricing e admin podem criar mapeamentos                      #
 # ------------------------------------------------------------------ #
  
 @router.post(
@@ -36,12 +39,11 @@ router = APIRouter()
 def create_depara(
     payload: DeparaCreate,
     request: Request,
-    # TODO: substituir por Depends(get_current_user) quando Auth (Pessoa 1) estiver pronto
-    x_user_id: Optional[str] = Header(None, description="ID do usuário autenticado"),
+    current_user: UsuarioResponse = Depends(require_role("pricing", "admin")),
 ):
     record = DeparaService.create(
         payload,
-        user_id=x_user_id,
+        user_id=current_user.id,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
@@ -50,6 +52,7 @@ def create_depara(
  
 # ------------------------------------------------------------------ #
 #  GET /depara                                                          #
+#  Qualquer usuário autenticado pode listar                            #
 # ------------------------------------------------------------------ #
  
 @router.get(
@@ -63,6 +66,7 @@ def list_depara(
     source_value:  Optional[str]  = Query(None),
     target_value:  Optional[str]  = Query(None),
     is_active:     Optional[bool] = Query(None),
+    current_user: UsuarioResponse = Depends(get_current_user),
 ):
     filters = DeparaFilters(
         mapping_type=mapping_type,
@@ -77,3 +81,4 @@ def list_depara(
         data=[DeparaRecord(**r) for r in records],
         total=len(records),
     )
+ 
