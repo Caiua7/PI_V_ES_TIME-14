@@ -2,12 +2,12 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-import os
+from app.core.config import settings  # <-- A NOSSA PONTE OFICIAL COM O .ENV
 
-# URL do banco (usa .env se existir)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+# Pegando a URL validada pelo Pydantic
+DATABASE_URL = settings.DATABASE_URL
 
-# Config específica pra SQLite
+# Config específica pra SQLite (caso alguém do time decida usar no futuro)
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
