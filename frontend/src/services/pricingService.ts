@@ -91,3 +91,55 @@ export const pricingService = {
     return adapt(record)
   },
 }
+
+interface EvolutionPoint {
+  mes: string
+  preco: number
+  margem: number
+}
+
+interface AnalyticsEvolution {
+  mode: string
+  series: EvolutionPoint[]
+}
+
+interface AnalyticsCards {
+  registros_analisados: number
+  preco_medio: number
+  margem_media: number
+  variacao_preco: number
+  sku_card: { visible: boolean; value: string | null }
+  benchmarking_card: { visible: boolean; value: number | null; category: string | null }
+}
+
+export const analyticsService = {
+  async getEvolution(filters: {
+    sku?: string
+    category?: string
+    date_from?: string
+    date_to?: string
+  }): Promise<AnalyticsEvolution> {
+    const params = new URLSearchParams()
+    if (filters.sku) params.append('sku', filters.sku)
+    if (filters.category) params.append('category', filters.category)
+    if (filters.date_from) params.append('date_from', filters.date_from)
+    if (filters.date_to) params.append('date_to', filters.date_to)
+    const query = params.toString() ? `?${params.toString()}` : ''
+    return apiRequest<AnalyticsEvolution>(`/api/v1/analytics/evolution${query}`)
+  },
+
+  async getCards(filters: {
+    sku?: string
+    category?: string
+    date_from?: string
+    date_to?: string
+  }): Promise<AnalyticsCards> {
+    const params = new URLSearchParams()
+    if (filters.sku) params.append('sku', filters.sku)
+    if (filters.category) params.append('category', filters.category)
+    if (filters.date_from) params.append('date_from', filters.date_from)
+    if (filters.date_to) params.append('date_to', filters.date_to)
+    const query = params.toString() ? `?${params.toString()}` : ''
+    return apiRequest<AnalyticsCards>(`/api/v1/analytics/cards${query}`)
+  },
+}
