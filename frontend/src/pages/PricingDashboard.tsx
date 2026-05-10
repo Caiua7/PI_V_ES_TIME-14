@@ -50,6 +50,41 @@ export default function PricingDashboardPage() {
   const [rows, setRows] = useState<PricingHistoryRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<Filters>(initialFilters)
+  const handleImportExcel = async (
+  event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+
+  const file = event.target.files?.[0]
+
+  if (!file) return
+
+  try {
+
+    const formData = new FormData()
+
+    formData.append("file", file)
+
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/v1/excel/pricing/import-excel",
+      {
+        method: "POST",
+        body: formData,
+      }
+    )
+
+    const data = await response.json()
+
+    console.log("UPLOAD:", data)
+
+    alert("Excel enviado com sucesso!")
+
+    } catch (error) {
+
+      console.error(error)
+
+      alert("Erro ao importar Excel")
+    }
+  }
 
   useEffect(() => {
     void (async () => {
@@ -152,13 +187,21 @@ export default function PricingDashboardPage() {
               <Plus size={18} />
               Novo Preço
             </button>
-            <button
-              className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors transition-transform hover:scale-105 active:scale-95 text-white w-[180px]"
+            <label
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors transition-transform hover:scale-105 active:scale-95 text-white w-[180px] cursor-pointer"
               style={{ backgroundColor: 'var(--color-info)' }}
-            >
+              >
+
               <Upload size={18} />
               Importar Excel
-            </button>
+
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleImportExcel}
+              />
+            </label>
             <button
               onClick={() => navigate('/pricing/analytics')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors transition-transform hover:scale-105 active:scale-95 text-white"

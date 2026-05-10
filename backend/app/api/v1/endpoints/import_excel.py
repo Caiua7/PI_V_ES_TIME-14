@@ -69,6 +69,7 @@ def import_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
     db.commit()
 
     # 🔥 ENVIA PARA O CELERY
+    print("🔥 ENVIANDO TASK PRO CELERY")
     process_excel.delay(job.id)
 
     return {
