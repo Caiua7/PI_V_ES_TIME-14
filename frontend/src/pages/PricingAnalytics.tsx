@@ -130,7 +130,7 @@ export default function PricingAnalyticsPage() {
             <div><label className="block text-sm font-medium mb-2 text-gray-700">Cliente</label>
               <SearchableSelect id="a-client" options={clientOptions} value={selectedClient} onChange={setSelectedClient} placeholder="Todos os Clientes" /></div>
             <div><label className="block text-sm font-medium mb-2 text-gray-700">Código Datasul</label>
-              <input type="text" value={datasulCode} onChange={(e) => setDatasulCode(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900" placeholder="Filtrar por código..." /></div>
+              <input type="text" value={datasulCode} onChange={(e) => setDatasulCode(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-[#111827] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" placeholder="Filtrar por código..." /></div>
             <div><label className="block text-sm font-medium mb-2 text-gray-700">Categoria</label>
               <SearchableSelect id="a-category" options={categoryOptions} value={selectedCategory} onChange={setSelectedCategory} placeholder="Todas" /></div>
             <div><label className="block text-sm font-medium mb-2 text-gray-700">Subcategoria</label>
@@ -138,9 +138,9 @@ export default function PricingAnalyticsPage() {
             <div><label className="block text-sm font-medium mb-2 text-gray-700">Tamanho</label>
               <SearchableSelect id="a-size" options={sizeOptions} value={selectedSize} onChange={setSelectedSize} placeholder="Todos" /></div>
             <div><label className="block text-sm font-medium mb-2 text-gray-700">Data Inicial</label>
-              <input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900" /></div>
+              <input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-[#111827] text-gray-900 dark:text-white dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" /></div>
             <div><label className="block text-sm font-medium mb-2 text-gray-700">Data Final</label>
-              <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900" /></div>
+              <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-[#111827] text-gray-900 dark:text-white dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors" /></div>
           </div>
         </div>
 
@@ -154,7 +154,7 @@ export default function PricingAnalyticsPage() {
                 <div className="flex flex-col items-center justify-center text-center gap-2">
                   <Calendar className="text-blue-500 mb-1" size={38} />
                   <p className="text-sm font-medium text-gray-600">Registros Analisados</p>
-                  <p className="text-2xl font-bold text-gray-900">{cards?.registros_analisados ?? 0}</p>
+                  <p className="text-2xl font-bold text-black dark:text-white">{cards?.registros_analisados ?? 0}</p>
                 </div>
               </div>
 
@@ -163,7 +163,7 @@ export default function PricingAnalyticsPage() {
                   <div className="flex flex-col items-center justify-center text-center gap-2">
                     <Search className="text-indigo-500 mb-1" size={38} />
                     <p className="text-sm font-medium text-gray-600">SKU Selecionado</p>
-                    <p className="text-2xl font-bold text-gray-900">{cards.sku_card.value}</p>
+                    <p className="text-2xl font-bold text-black dark:text-white">{cards.sku_card.value}</p>
                   </div>
                 </div>
               )}
@@ -172,7 +172,7 @@ export default function PricingAnalyticsPage() {
                 <div className="flex flex-col items-center justify-center text-center gap-2">
                   <TrendingUp className="text-yellow-500 mb-1" size={38} />
                   <p className="text-sm font-medium text-gray-600">Preço Médio</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(cards?.preco_medio ?? 0)}</p>
+                  <p className="text-2xl font-bold text-black dark:text-white">{formatCurrency(cards?.preco_medio ?? 0)}</p>
                 </div>
               </div>
 
@@ -180,7 +180,7 @@ export default function PricingAnalyticsPage() {
                 <div className="flex flex-col items-center justify-center text-center gap-2">
                   <BarChart3 className="text-purple-500 mb-1" size={38} />
                   <p className="text-sm font-medium text-gray-600">Margem Média</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatPercent(cards?.margem_media ?? 0)}</p>
+                  <p className="text-2xl font-bold text-black dark:text-white">{formatPercent(cards?.margem_media ?? 0)}</p>
                 </div>
               </div>
 
@@ -189,7 +189,7 @@ export default function PricingAnalyticsPage() {
                   <div className="flex flex-col items-center justify-center text-center gap-2">
                     <BarChart3 className="text-green-500 mb-1" size={38} />
                     <p className="text-sm font-medium text-gray-600">Margem Média — {cards.benchmarking_card.category}</p>
-                    <p className="text-2xl font-bold text-gray-900">{formatPercent(cards.benchmarking_card.value ?? 0)}</p>
+                    <p className="text-2xl font-bold text-black dark:text-white">{formatPercent(cards.benchmarking_card.value ?? 0)}</p>
                   </div>
                 </div>
               )}

@@ -23,7 +23,7 @@ export default function SearchableSelect({
     <div className="relative">
       <select
         id={id}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-[#111827] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none transition-colors"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >

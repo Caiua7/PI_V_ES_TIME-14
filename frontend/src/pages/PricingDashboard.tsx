@@ -226,38 +226,38 @@ export default function PricingDashboardPage() {
 
       <div className="max-w-[110rem] mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg p-6 shadow-sm card-pronutrition hover-lift">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm card-pronutrition hover-lift transition-colors">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Clientes</p>
-                <p className="text-2xl font-bold text-gray-900">{new Set(filteredData.map((item) => item.cliente)).size}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Clientes</p>
+                <p className="text-2xl font-bold text-black dark:text-white">{new Set(filteredData.map((item) => item.cliente)).size}</p>
               </div>
               <Users className="text-blue-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-lg p-6 shadow-sm card-pronutrition hover-lift">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm card-pronutrition hover-lift transition-colors">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total SKUs</p>
-                <p className="text-2xl font-bold text-gray-900">{new Set(filteredData.map((item) => item.codigo)).size}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total SKUs</p>
+                <p className="text-2xl font-bold text-black dark:text-white">{new Set(filteredData.map((item) => item.codigo)).size}</p>
               </div>
               <Package className="text-green-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-lg p-6 shadow-sm card-pronutrition hover-lift">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm card-pronutrition hover-lift transition-colors">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Preço Médio</p>
-                <p className="text-2xl font-bold text-gray-900">R$ {avgPrice.toFixed(2)}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Preço Médio</p>
+                <p className="text-2xl font-bold text-black dark:text-white">R$ {avgPrice.toFixed(2)}</p>
               </div>
               <DollarSign className="text-yellow-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-lg p-6 shadow-sm card-pronutrition hover-lift">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm card-pronutrition hover-lift transition-colors">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Margem Média</p>
-                <p className="text-2xl font-bold text-gray-900">{avgMargin.toFixed(1)}%</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Margem Média</p>
+                <p className="text-2xl font-bold text-black dark:text-white">{avgMargin.toFixed(1)}%</p>
               </div>
               <TrendingUp className="text-purple-500" size={32} />
             </div>
@@ -266,7 +266,7 @@ export default function PricingDashboardPage() {
       </div>
 
       <div className="max-w-[110rem] mx-auto px-6">
-        <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm mb-6 transition-colors">
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-gray-500" />
@@ -276,43 +276,43 @@ export default function PricingDashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">SKU</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">SKU</label>
               <SearchableSelect id="f-sku" options={skuOptions} value={filters.sku} onChange={(value) => handleFilterChange('sku', value)} placeholder="Todos os SKUs" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Cliente</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Cliente</label>
               <SearchableSelect id="f-client" options={clientOptions} value={filters.client} onChange={(value) => handleFilterChange('client', value)} placeholder="Todos os clientes" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Código Datasul</label>
-              <input type="text" value={filters.datasulCode} onChange={(event) => handleFilterChange('datasulCode', event.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900" placeholder="Filtrar por código..." />
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Código Datasul</label>
+              <input type="text" value={filters.datasulCode} onChange={(event) => handleFilterChange('datasulCode', event.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#111827] text-black dark:text-white transition-colors" placeholder="Filtrar por código..." />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Categoria</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Categoria</label>
               <SearchableSelect id="f-category" options={categoryOptions} value={filters.category} onChange={(value) => handleFilterChange('category', value)} placeholder="Todas" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Subcategoria</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Subcategoria</label>
               <SearchableSelect id="f-subcategory" options={subcategoryOptions} value={filters.subcategory} onChange={(value) => handleFilterChange('subcategory', value)} placeholder="Todas" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Tamanho</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Tamanho</label>
               <SearchableSelect id="f-size" options={sizeOptions} value={filters.size} onChange={(value) => handleFilterChange('size', value)} placeholder="Todos" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Data Inicial</label>
-              <input type="date" value={filters.dateFrom} onChange={(event) => handleFilterChange('dateFrom', event.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900" />
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Data Inicial</label>
+              <input type="date" value={filters.dateFrom} onChange={(event) => handleFilterChange('dateFrom', event.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#111827] text-gray-900 dark:text-white dark:[color-scheme:dark] transition-colors"/>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Data Final</label>
-              <input type="date" value={filters.dateTo} onChange={(event) => handleFilterChange('dateTo', event.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900" />
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Data Final</label>
+              <input type="date" value={filters.dateTo} onChange={(event) => handleFilterChange('dateTo', event.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#111827] text-gray-900 dark:text-white dark:[color-scheme:dark] transition-colors" />
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-[110rem] mx-auto px-6 pb-6">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden transition-colors">
           <div className="overflow-auto h-[calc(100vh-320px)]">
             <table className="w-full min-w-[1500px]">
               <thead className="bg-gray-50 sticky top-0 z-40 shadow-sm">
@@ -323,11 +323,11 @@ export default function PricingDashboardPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço líquido</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Preço bruto</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Preço bruto</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700 transition-colors">
                 {loading ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-4 text-center text-gray-500">Carregando...</td>
@@ -338,14 +338,14 @@ export default function PricingDashboardPage() {
                   </tr>
                 ) : (
                   filteredData.map((item) => (
-                    <tr key={item.id} className="group hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.cliente}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tamanho || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.gestora || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.codigo || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.sku}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ {(item.custo ?? 0).toFixed(2)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">R$ {(item.precoBruto ?? 0).toFixed(2)}</td>
+                    <tr key={item.id} className="hover:bg-[#1f2937] transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">{item.cliente}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">{item.tamanho || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">{item.gestora || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">{item.codigo || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">{item.sku}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">R$ {(item.custo ?? 0).toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">R$ {(item.precoBruto ?? 0).toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
                           <button
