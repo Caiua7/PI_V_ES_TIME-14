@@ -27,26 +27,29 @@ export interface ForgotPasswordInput {
 }
 
 export interface AuthSession {
-  token: string
+  access_token: string
+  refresh_token: string
   usuario: UserProfile
 }
 
 export interface PricingHistoryRecord {
   id: string
   cliente: string
-  tamanho: string
-  gestora: string
-  codigo: string
   sku: string
-  precoLiquido: number
-  precoBruto: number
-  moeda: 'BRL' | 'USD' | 'EUR'
-  margemOrcada: number
-  mes: string
+  codigo: string
   categoria: string
   subcategoria: string
+  tamanho: string
+  gestora: string
+  canal: string
+  status: string
+  precoBruto: number
+  precoAnterior: number
+  custo: number
+  margemOrcada: number
+  moeda: 'BRL' | 'USD' | 'EUR'
+  mes: string
 }
-
 export interface PricingFilters {
   busca: string
   categoria: string

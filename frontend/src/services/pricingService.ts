@@ -1,77 +1,93 @@
-import { pricingHistoryMock } from '../mocks/pricingHistory'
-import type { DashboardFilters, PricingFilters, PricingHistoryRecord } from '../types'
+import { apiRequest } from './apiClient'
+import type { PricingHistoryRecord } from '../types'
 
-let pricingStore: PricingHistoryRecord[] = [...pricingHistoryMock]
-
-function delay(ms = 650): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+// Adaptador: converte campos da API (inglês) para o tipo do frontend (português)
+function adapt(record: ApiRecord): PricingHistoryRecord {
+  return {
+    id: record.id,
+    cliente: record.cliente,
+    sku: record.sku,
+    codigo: record.datasul_code ?? '',
+    categoria: record.category ?? '',
+    subcategoria: record.subcategory ?? '',
+    tamanho: record.size ?? '',
+    gestora: record.manager ?? '',
+    canal: record.channel ?? '',
+    status: record.status,
+    precoBruto: record.current_price,
+    precoAnterior: record.previous_price ?? 0,
+    custo: record.cost ?? 0,
+    margemOrcada: record.margin ?? 0,
+    moeda: (record.currency ?? 'BRL') as 'BRL' | 'USD' | 'EUR',
+    mes: record.month,
+  }
 }
 
-function applyFilters(rows: PricingHistoryRecord[], filters: PricingFilters): PricingHistoryRecord[] {
-  const query = filters.busca.toLowerCase()
+interface ApiRecord {
+  id: string
+  cliente: string
+  sku: string
+  datasul_code?: string
+  category?: string
+  subcategory?: string
+  size?: string
+  manager?: string
+  channel?: string
+  status: string
+  current_price: number
+  previous_price?: number
+  cost?: number
+  margin?: number
+  currency?: string
+  month: string
+}
 
-  return rows.filter((item) => {
-    const byQuery =
-      !query ||
-      item.cliente.toLowerCase().includes(query) ||
-      item.codigo.toLowerCase().includes(query) ||
-      item.sku.toLowerCase().includes(query)
-
-    const byCategoria = !filters.categoria || item.categoria === filters.categoria
-    const byCliente = !filters.cliente || item.cliente === filters.cliente
-    const byMes = !filters.mes || item.mes === filters.mes
-
-    return byQuery && byCategoria && byCliente && byMes
-  })
+interface ApiResponse {
+  data: ApiRecord[]
+  meta: { total: number }
 }
 
 export const pricingService = {
-  async list(filters: PricingFilters): Promise<PricingHistoryRecord[]> {
-    await delay()
-    // TODO(Python API): substituir por GET /pricing/history com query params
-    return applyFilters(pricingStore, filters)
-  },
-
   async getAll(): Promise<PricingHistoryRecord[]> {
-    await delay(500)
-    // TODO(Python API): substituir por GET /pricing/history
-    return [...pricingStore]
+    const response = await apiRequest<ApiResponse>('/api/v1/pricing/history')
+    return response.data.map(adapt)
   },
 
-  async create(payload: Omit<PricingHistoryRecord, 'id'>): Promise<PricingHistoryRecord> {
-    await delay(700)
-    // TODO(Python API): substituir por POST /pricing/history
-    const created: PricingHistoryRecord = { ...payload, id: `p-${Date.now()}` }
-    pricingStore = [created, ...pricingStore]
-    return created
+  async list(filters: Record<string, string>): Promise<PricingHistoryRecord[]> {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.append(key, value)
+    })
+    const query = params.toString() ? `?${params.toString()}` : ''
+    const response = await apiRequest<ApiResponse>(`/api/v1/pricing/history${query}`)
+    return response.data.map(adapt)
   },
 
   async remove(id: string): Promise<void> {
-    await delay(450)
-    // TODO(Python API): substituir por DELETE /pricing/history/:id
-    pricingStore = pricingStore.filter((item) => item.id !== id)
+    await apiRequest(`/api/v1/pricing/history/${id}`, { method: 'DELETE' })
   },
 
-  async analytics(filters: DashboardFilters): Promise<PricingHistoryRecord[]> {
-    await delay(700)
-    // TODO(Python API): substituir por GET /pricing/analytics
-    return applyFilters(pricingStore, {
-      busca: '',
-      categoria: filters.categoria,
-      cliente: filters.cliente,
-      mes: filters.periodo,
+  async create(payload: Omit<PricingHistoryRecord, 'id'>): Promise<PricingHistoryRecord> {
+    const body = {
+      cliente: payload.cliente,
+      sku: payload.sku,
+      datasul_code: payload.codigo,
+      category: payload.categoria,
+      subcategory: payload.subcategoria,
+      size: payload.tamanho,
+      manager: payload.gestora,
+      current_price: payload.precoBruto,
+      previous_price: payload.precoAnterior,
+      cost: payload.custo,
+      margin: payload.margemOrcada,
+      currency: payload.moeda,
+      month: payload.mes,
+      status: payload.status ?? 'Ativo',
+    }
+    const record = await apiRequest<ApiRecord>('/api/v1/pricing/history', {
+      method: 'POST',
+      body: JSON.stringify(body),
     })
-  },
-
-  getClients(): string[] {
-    return [...new Set(pricingStore.map((item) => item.cliente))]
-  },
-
-  getCategories(): string[] {
-    return [...new Set(pricingStore.map((item) => item.categoria))]
-  },
-
-  getMonths(): string[] {
-    return [...new Set(pricingStore.map((item) => item.mes))].sort()
+    return adapt(record)
   },
 }

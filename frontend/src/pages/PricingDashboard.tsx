@@ -301,8 +301,8 @@ export default function PricingDashboardPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.gestora || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.codigo || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.sku}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ {item.precoLiquido.toFixed(2)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">R$ {item.precoBruto.toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ {(item.custo ?? 0).toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">R$ {(item.precoBruto ?? 0).toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
                           <button

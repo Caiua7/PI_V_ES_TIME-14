@@ -1,39 +1,30 @@
-import { mockUsers } from '../mocks/auth'
-import type { ApiError, AuthSession, ForgotPasswordInput, LoginInput, RegisterInput, UserProfile } from '../types'
-
-type StoredUser = UserProfile & {
-  senha: string
-}
+import { apiRequest } from './apiClient'
+import type { AuthSession, ForgotPasswordInput, LoginInput, RegisterInput } from '../types'
 
 const SESSION_KEY = 'neoprice_auth_session'
-const USERS_KEY = 'neoprice_mock_users'
-
-function delay(ms = 700): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function readUsers(): StoredUser[] {
-  const raw = localStorage.getItem(USERS_KEY)
-  if (raw) return JSON.parse(raw) as StoredUser[]
-
-  const seeded: StoredUser[] = mockUsers.map((user) => ({ ...user, senha: '123456' }))
-  localStorage.setItem(USERS_KEY, JSON.stringify(seeded))
-  return seeded
-}
-
-function saveUsers(users: StoredUser[]): void {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
-}
 
 export class ServiceError extends Error {
   readonly code: string
   readonly status: number
 
-  constructor(payload: ApiError) {
-    super(payload.message)
+  constructor(message: string, code = 'UNKNOWN', status = 500) {
+    super(message)
     this.name = 'ServiceError'
-    this.code = payload.code
-    this.status = payload.status
+    this.code = code
+    this.status = status
+  }
+}
+
+interface LoginApiResponse {
+  access_token: string
+  refresh_token: string
+  token_type: string
+  expires_in: number
+  usuario: {
+    id: string
+    nome: string
+    email: string
+    role: string
   }
 }
 
@@ -45,26 +36,20 @@ export const authService = {
   },
 
   async login(payload: LoginInput): Promise<AuthSession> {
-    await delay()
-    const users = readUsers()
-    const foundUser = users.find((item) => item.email.toLowerCase() === payload.email.toLowerCase())
-
-    if (!foundUser || foundUser.senha !== payload.senha) {
-      throw new ServiceError({
-        code: 'AUTH_INVALID',
-        status: 401,
-        message: 'Credenciais invalidas. Verifique e tente novamente.',
-      })
-    }
+    const data = await apiRequest<LoginApiResponse>('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: payload.email, senha: payload.senha }),
+    })
 
     const session: AuthSession = {
-      token: `mock-token-${foundUser.id}`,
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
       usuario: {
-        id: foundUser.id,
-        nome: foundUser.nome,
-        email: foundUser.email,
-        areaCargo: foundUser.areaCargo,
-        role: foundUser.role,
+        id: data.usuario.id,
+        nome: data.usuario.nome,
+        email: data.usuario.email,
+        areaCargo: '',
+        role: data.usuario.role as AuthSession['usuario']['role'],
       },
     }
 
@@ -73,69 +58,35 @@ export const authService = {
   },
 
   async register(payload: RegisterInput): Promise<AuthSession> {
-    await delay(900)
-
-    if (payload.senha !== payload.confirmarSenha) {
-      throw new ServiceError({
-        code: 'PASSWORD_MISMATCH',
-        status: 400,
-        message: 'Senha e confirmacao devem ser iguais.',
-      })
-    }
-
-    const users = readUsers()
-    const existing = users.find((item) => item.email.toLowerCase() === payload.email.toLowerCase())
-    if (existing) {
-      throw new ServiceError({
-        code: 'EMAIL_ALREADY_EXISTS',
-        status: 409,
-        message: 'Este e-mail ja esta cadastrado no mock local.',
-      })
-    }
-
-    const created: StoredUser = {
-      id: `u-${Date.now()}`,
-      nome: payload.nome,
-      email: payload.email,
-      areaCargo: payload.areaCargo,
-      role: 'pricing',
-      senha: payload.senha,
-    }
-
-    const updated = [created, ...users]
-    saveUsers(updated)
-
-    const session: AuthSession = {
-      token: `mock-token-${created.id}`,
-      usuario: {
-        id: created.id,
-        nome: created.nome,
-        email: created.email,
-        areaCargo: created.areaCargo,
-        role: created.role,
-      },
-    }
-
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-    return session
+    await apiRequest('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        nome: payload.nome,
+        sobrenome: '',
+        email: payload.email,
+        senha: payload.senha,
+        areaCargo: payload.areaCargo,
+      }),
+    })
+    return this.login({ email: payload.email, senha: payload.senha, lembrar: true })
   },
 
   async forgotPassword(payload: ForgotPasswordInput): Promise<{ message: string }> {
-    await delay(850)
-
-    if (payload.email.toLowerCase().includes('erro')) {
-      throw new ServiceError({
-        code: 'SEND_ERROR',
-        status: 500,
-        message: 'Falha simulada ao enviar e-mail. Tente novamente.',
-      })
-    }
-
-    // TODO(Python API): enviar requisicao POST /auth/forgot-password
-    return { message: 'Se o e-mail existir, o link de recuperacao sera enviado.' }
+    await apiRequest('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: payload.email }),
+    })
+    return { message: 'Se o e-mail existir, o link de recuperação será enviado.' }
   },
 
   async logout(): Promise<void> {
+    const session = this.getSession()
+    if (session?.refresh_token) {
+      await apiRequest('/api/v1/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refresh_token: session.refresh_token }),
+      }).catch(() => {})
+    }
     localStorage.removeItem(SESSION_KEY)
   },
 }
