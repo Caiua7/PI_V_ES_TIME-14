@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from app.api.v1.endpoints import ai
 
 # Importando endpoints
 from app.api.v1.endpoints.auth import router as auth_router
@@ -49,4 +50,9 @@ api_router.include_router(
     depara_router,
     prefix="/depara",
     tags=["Depara"]
+)
+api_router.include_router(
+    ai.router,
+    prefix="/ai",
+    tags=["Inteligência Artificial"]
 )
