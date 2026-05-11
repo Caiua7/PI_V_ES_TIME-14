@@ -10,6 +10,7 @@ import PricingAnalyticsPage from './pages/PricingAnalytics'
 import PricingDashboardPage from './pages/PricingDashboard'
 import { authService } from './services/authService'
 import type { AuthSession } from './types'
+import { AIChat } from './components/AIChat';
 
 function ProtectedRoute({
   session,
@@ -69,8 +70,10 @@ function App() {
 
         <Route path="*" element={<Navigate to={session ? '/pricing/dashboard' : '/login'} replace />} />
       </Routes>
+      <AIChat />
     </div>
   )
 }
+
 
 export default App
