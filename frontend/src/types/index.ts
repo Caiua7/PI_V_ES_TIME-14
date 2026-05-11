@@ -44,6 +44,7 @@ export interface PricingHistoryRecord {
   canal: string
   status: string
   precoBruto: number
+  precoLiquido: number
   precoAnterior: number
   custo: number
   margemOrcada: number
