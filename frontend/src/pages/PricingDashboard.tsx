@@ -159,17 +159,20 @@ export default function PricingDashboardPage() {
   async function handleNewPrice() {
     const created = await pricingService.create({
       cliente: 'Cliente Novo',
-      tamanho: 'SMB',
-      gestora: 'Equipe NeoPrice',
-      codigo: `NP-${Date.now().toString().slice(-3)}`,
       sku: `SKU-${Date.now().toString().slice(-3)}`,
-      precoLiquido: 34280,
-      precoBruto: 49270,
+      codigo: `NP-${Date.now().toString().slice(-3)}`,
+      categoria: 'Outros',
+      subcategoria: '',
+      tamanho: '',
+      gestora: '',
+      canal: '',
+      status: 'Ativo',
+      precoBruto: 0,
+      precoAnterior: 0,
+      custo: 0,
+      margemOrcada: 0,
       moeda: 'BRL',
-      margemOrcada: 24.1,
-      mes: '2026-04',
-      categoria: 'Software',
-      subcategoria: 'SaaS Core',
+      mes: '2026-05',
     })
     setRows((current) => [created, ...current])
   }
@@ -207,7 +210,7 @@ export default function PricingDashboardPage() {
                     const token = session ? JSON.parse(session).access_token : null
                     const res = await fetch('http://localhost:8000/api/v1/excel/pricing/import-excel', {
                       method: 'POST',
-                      headers: token ? { Authorization: `Bearer ${token}` } : {},
+                      headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
                       body: formData,
                     })
                     const data = await res.json()
