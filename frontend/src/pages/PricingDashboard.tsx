@@ -190,16 +190,36 @@ export default function PricingDashboardPage() {
             <label
               className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors transition-transform hover:scale-105 active:scale-95 text-white w-[180px] cursor-pointer"
               style={{ backgroundColor: 'var(--color-info)' }}
-              >
-
+            >
               <Upload size={18} />
               Importar Excel
-
               <input
                 type="file"
                 accept=".xlsx,.xls"
                 className="hidden"
-                onChange={handleImportExcel}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const formData = new FormData()
+                  formData.append('file', file)
+                  try {
+                    const session = localStorage.getItem('neoprice_auth_session')
+                    const token = session ? JSON.parse(session).access_token : null
+                    const res = await fetch('http://localhost:8000/api/v1/excel/pricing/import-excel', {
+                      method: 'POST',
+                      headers: token ? { Authorization: `Bearer ${token}` } : {},
+                      body: formData,
+                    })
+                    const data = await res.json()
+                    alert(`Importação concluída!\nStatus: ${data.status}\nProcessados: ${data.processed_rows}\nErros: ${data.error_rows}`)
+                    const updated = await pricingService.getAll()
+                    setRows(updated)
+                  } catch (err) {
+                    alert('Erro ao importar arquivo.')
+                    console.error(err)
+                  }
+                  e.target.value = ''
+                }}
               />
             </label>
             <button
