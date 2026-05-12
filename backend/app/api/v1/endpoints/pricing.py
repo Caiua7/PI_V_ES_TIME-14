@@ -54,25 +54,43 @@ def list_pricing_history(
 ):
     try:
         filters = PricingHistoryFilters(
-            client=client, sku=sku, category=category, subcategory=subcategory,
-            manager=manager, status=status, datasul_code=datasul_code,
-            date_from=date_from, date_to=date_to,
-            sort_by=sort_by, sort_order=sort_order,
+            client=client,
+            sku=sku,
+            category=category,
+            subcategory=subcategory,
+            manager=manager,
+            status=status,
+            datasul_code=datasul_code,
+            date_from=date_from,
+            date_to=date_to,
+            sort_by=sort_by,
+            sort_order=sort_order,
         )
+
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
- 
+
     records = PricingService.list_history(filters)
- 
+
+    print("PRIMEIRO RECORD:")
+    print(records[0])
+
     return PricingHistoryResponse(
         data=[PricingHistoryRecord(**r) for r in records],
         meta=PricingHistoryMeta(
             total=len(records),
             filters_applied=FiltersApplied(
-                client=client, sku=sku, category=category, subcategory=subcategory,
-                manager=manager, status=status, datasul_code=datasul_code,
-                date_from=date_from, date_to=date_to,
-                sort_by=sort_by, sort_order=sort_order,
+                client=client,
+                sku=sku,
+                category=category,
+                subcategory=subcategory,
+                manager=manager,
+                status=status,
+                datasul_code=datasul_code,
+                date_from=date_from,
+                date_to=date_to,
+                sort_by=sort_by,
+                sort_order=sort_order,
             ),
         ),
     )

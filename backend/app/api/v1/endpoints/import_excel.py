@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 import uuid, shutil, os, time
 from datetime import datetime
 import pandas as pd
+import unicodedata
+import re
 
 from app.infrastructure.database import get_db
 from app.infrastructure.supabase_client import supabase
@@ -14,122 +16,182 @@ UPLOAD_DIR = "uploads"
 # Mapeamento de colunas do Excel → campos da tabela
 # Cobre variações de nome encontradas no BD - Histórico de preços.xlsx
 COLUMN_MAP = {
+
     # cliente
     "cliente": "cliente",
     "client": "cliente",
+
     # sku
     "sku": "sku",
     "produto": "sku",
     "descricao": "sku",
-    "descrição": "sku",
+
     # datasul_code
     "codigo": "datasul_code",
-    "código": "datasul_code",
     "cod": "datasul_code",
     "datasul_code": "datasul_code",
     "datasul": "datasul_code",
     "cod_datasul": "datasul_code",
-    "código datasul": "datasul_code",
     "codigo datasul": "datasul_code",
+
     # category
     "category": "category",
     "categoria": "category",
+
     # subcategory
     "subcategory": "subcategory",
     "subcategoria": "subcategory",
+
     # size
     "size": "size",
     "tamanho": "size",
     "tam": "size",
-    "canal de vendas": "size",
+
     # manager
     "manager": "manager",
     "gestor": "manager",
     "gestora": "manager",
     "responsavel": "manager",
-    "responsável": "manager",
+
     # channel
     "channel": "channel",
     "canal": "channel",
+    "canal de vendas": "channel",
+
     # status
     "status": "status",
+
     # current_price
     "current_price": "current_price",
     "preco_atual": "current_price",
-    "preço atual": "current_price",
     "preco atual": "current_price",
     "preco_bruto": "current_price",
-    "preço bruto": "current_price",
     "preco bruto": "current_price",
     "preco": "current_price",
-    "preço": "current_price",
     "valor": "current_price",
-    "preço de venda": "current_price",
     "preco de venda": "current_price",
+
     # previous_price
     "previous_price": "previous_price",
     "preco_anterior": "previous_price",
-    "preço anterior": "previous_price",
     "preco anterior": "previous_price",
+    "preco liquido": "previous_price",
+
     # cost
     "cost": "cost",
     "custo": "cost",
+
     # margin
     "margin": "margin",
     "margem": "margin",
     "margem_%": "margin",
     "margem_%_orcada": "margin",
-    "margem % orçada": "margin",
-    "margem orçada": "margin",
+    "margem % orcada": "margin",
     "margem orcada": "margin",
-    "margem_%_orçada": "margin",
+    "margem (orcada)": "margin",
+
     # currency
     "currency": "currency",
     "moeda": "currency",
+
     # month
     "month": "month",
     "mes": "month",
-    "mês": "month",
     "competencia": "month",
-    "competência": "month",
     "periodo": "month",
-    "período": "month",
     "data": "month",
 }
 
 
 def normalize_col(col: str) -> str:
-    return col.strip().lower().replace("  ", " ")
+    col = str(col).strip().lower()
+
+    # remove acentos
+    col = unicodedata.normalize("NFKD", col)
+    col = "".join(c for c in col if not unicodedata.combining(c))
+
+    # remove espaços múltiplos
+    col = re.sub(r"\s+", " ", col)
+
+    return col.strip()
 
 
 def parse_month(value) -> str | None:
-    """Converte vários formatos de data para YYYY-MM."""
+    """
+    Converte:
+    mar/22 -> 2022-03
+    ago/23 -> 2023-08
+    2025-01-01 -> 2025-01
+    """
+
     if pd.isna(value):
         return None
-    s = str(value).strip()
-    # Já no formato YYYY-MM
-    if len(s) == 7 and s[4] == "-":
-        return s
-    # Timestamp do pandas: 2025-01-01 00:00:00
-    if len(s) >= 7 and "-" in s:
-        return s[:7]
-    # Formato DD/MM/YYYY ou MM/YYYY
+
+    s = str(value).strip().lower()
+
+    meses = {
+        "jan": "01",
+        "fev": "02",
+        "mar": "03",
+        "abr": "04",
+        "mai": "05",
+        "jun": "06",
+        "jul": "07",
+        "ago": "08",
+        "set": "09",
+        "out": "10",
+        "nov": "11",
+        "dez": "12",
+    }
+
+    # formato mar/22
     if "/" in s:
-        parts = s.split("/")
-        if len(parts) == 3:
-            return f"{parts[2][:4]}-{parts[1].zfill(2)}"
-        if len(parts) == 2:
-            return f"{parts[1][:4]}-{parts[0].zfill(2)}"
+        parte1, parte2 = s.split("/")
+
+        # mar/22
+        if parte1 in meses:
+            ano = f"20{parte2}"
+            mes = meses[parte1]
+            return f"{ano}-{mes}"
+
+        # 03/2022
+        return f"{parte2[:4]}-{parte1.zfill(2)}"
+
+    # 2025-01-01
+    if "-" in s and len(s) >= 7:
+        return s[:7]
+
     return None
 
 
-def parse_float(value) -> float | None:
-    if pd.isna(value):
+def parse_float(value):
+    if value is None:
         return None
+
     try:
-        s = str(value).strip().replace(",", ".").replace("%", "").replace("R$", "").strip()
-        return round(float(s), 2)
-    except Exception:
+        import pandas as pd
+
+        if pd.isna(value):
+            return None
+
+        if isinstance(value, (int, float)):
+            return float(value)
+
+        s = str(value).strip()
+
+        s = s.replace("R$", "")
+        s = s.replace("%", "")
+        s = s.replace(" ", "")
+
+        # só trata vírgula brasileira
+        if "," in s:
+            s = s.replace(".", "")
+            s = s.replace(",", ".")
+
+        return float(s)
+
+    except Exception as e:
+        print("ERRO parse_float:", value, e)
         return None
 
 
@@ -164,6 +226,7 @@ def process_excel_sync(job_id: str, file_path: str, db: Session):
                 col_rename[col] = COLUMN_MAP[col]
 
         df = df.rename(columns=col_rename)
+        print(df.columns.tolist())
 
         print(f"Colunas encontradas: {list(df.columns)}")
         print(f"Colunas mapeadas: {col_rename}")
@@ -181,6 +244,18 @@ def process_excel_sync(job_id: str, file_path: str, db: Session):
                 sku = str(row.get("sku", "") or "").strip()
                 month = parse_month(row.get("month"))
                 current_price = parse_float(row.get("current_price"))
+
+                 # DEBUG
+                print("===================================")
+                print("ROW:", row.to_dict())
+
+                print("RAW previous_price:", row.get("previous_price"))
+                print("RAW current_price:", row.get("current_price"))
+
+                previous_price = parse_float(row.get("previous_price"))
+
+                print("PARSED previous_price:", previous_price)
+                print("PARSED current_price:", current_price)
 
                 # Campos obrigatórios
                 if not cliente or not sku or not month or current_price is None or current_price <= 0:
@@ -217,6 +292,8 @@ def process_excel_sync(job_id: str, file_path: str, db: Session):
         BATCH_SIZE = 100
         for i in range(0, len(records), BATCH_SIZE):
             batch = records[i:i+BATCH_SIZE]
+            print("BATCH TEST:")
+            print(batch[0])
             supabase.table("pricing_history").insert(batch).execute()
             print(f"Lote {i//BATCH_SIZE + 1} inserido ({len(batch)} registros)")
 
