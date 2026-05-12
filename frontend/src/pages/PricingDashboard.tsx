@@ -54,6 +54,15 @@ export default function PricingDashboardPage() {
   const [rows, setRows] = useState<PricingHistoryRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<Filters>(initialFilters)
+  const [showModal, setShowModal] = useState(false)
+
+  const [newPrice, setNewPrice] = useState({
+    cliente: '',
+    sku: '',
+    precoBruto: 0,
+    precoLiquido: 0,
+  })
+
   const handleImportExcel = async (
   event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -245,22 +254,147 @@ export default function PricingDashboardPage() {
 }
 
   return (
-    <div className="min-h-screen bg-gray-50 transition-colors duration-200">
-      <div className="max-w-[110rem] mx-auto px-6 py-4">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+  <div className="min-h-screen bg-gray-50 transition-colors duration-200">
+
+    {showModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-xl">
+
+          <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+            Novo Preço
+          </h2>
+
+          <div className="space-y-4">
+
+            <input
+              type="text"
+              placeholder="Cliente"
+              value={newPrice.cliente}
+              onChange={(e) =>
+                setNewPrice({ ...newPrice, cliente: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white"
+            />
+
+            <input
+              type="text"
+              placeholder="SKU"
+              value={newPrice.sku}
+              onChange={(e) =>
+                setNewPrice({ ...newPrice, sku: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white"
+            />
+
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Preço Bruto
+              </label>
+
+              <input
+                type="number"
+                value={newPrice.precoBruto}
+                onChange={(e) =>
+                  setNewPrice({
+                    ...newPrice,
+                    precoBruto: Number(e.target.value),
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Preço Líquido
+              </label>
+
+              <input
+                type="number"
+                value={newPrice.precoLiquido}
+                onChange={(e) =>
+                  setNewPrice({
+                    ...newPrice,
+                    precoLiquido: Number(e.target.value),
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white"
+              />
+            </div>
+
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+
             <button
-              onClick={() => void handleNewPrice()}
-              className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors transition-transform hover:scale-105 active:scale-95 text-white w-[180px]"
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-black dark:text-white"
+            >
+              Cancelar
+            </button>
+
+            <button
+              onClick={async () => {
+
+                const created = await pricingService.create({
+                  cliente: newPrice.cliente,
+                  sku: newPrice.sku,
+                  codigo: '',
+                  categoria: 'Outros',
+                  subcategoria: '',
+                  tamanho: '',
+                  gestora: '',
+                  canal: '',
+                  status: 'Ativo',
+
+                  precoBruto: newPrice.precoBruto,
+                  precoLiquido: newPrice.precoLiquido,
+                  precoAnterior: newPrice.precoLiquido,
+
+                  custo: 0,
+                  margemOrcada: 0,
+                  moeda: 'BRL',
+                  mes: '2026-05',
+                })
+
+                setRows((prev) => [created, ...prev])
+
+                setShowModal(false)
+
+                setNewPrice({
+                  cliente: '',
+                  sku: '',
+                  precoBruto: 0,
+                  precoLiquido: 0,
+                })
+              }}
+              className="px-4 py-2 rounded-lg text-white"
               style={{ backgroundColor: 'var(--color-success)' }}
             >
-              <Plus size={18} />
-              Novo Preço
+              Salvar
             </button>
-            <label
-              className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors transition-transform hover:scale-105 active:scale-95 text-white w-[180px] cursor-pointer"
-              style={{ backgroundColor: 'var(--color-info)' }}
-            >
+
+          </div>
+        </div>
+      </div>
+    )}
+
+    <div className="max-w-[110rem] mx-auto px-6 py-4">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors transition-transform hover:scale-105 active:scale-95 text-white w-[180px]"
+            style={{ backgroundColor: 'var(--color-success)' }}
+          >
+            <Plus size={18} />
+            Novo Preço
+          </button>
+
+          <label
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors transition-transform hover:scale-105 active:scale-95 text-white w-[180px] cursor-pointer"
+            style={{ backgroundColor: 'var(--color-info)' }}
+          >
               <Upload size={18} />
               Importar Excel
               <input
