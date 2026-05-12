@@ -14,9 +14,11 @@ function adapt(record: ApiRecord): PricingHistoryRecord {
     gestora: record.manager ?? '',
     canal: record.channel ?? '',
     status: record.status,
-    precoBruto: record.current_price,
+
+    precoBruto: record.current_price ?? 0,
     precoAnterior: record.previous_price ?? 0,
     precoLiquido: record.previous_price ?? 0,
+
     custo: record.cost ?? 0,
     margemOrcada: record.margin ?? 0,
     moeda: (record.currency ?? 'BRL') as 'BRL' | 'USD' | 'EUR',

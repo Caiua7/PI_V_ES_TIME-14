@@ -157,25 +157,27 @@ export default function PricingDashboardPage() {
   }
 
   async function handleNewPrice() {
-    const created = await pricingService.create({
-      cliente: 'Cliente Novo',
-      sku: `SKU-${Date.now().toString().slice(-3)}`,
-      codigo: `NP-${Date.now().toString().slice(-3)}`,
-      categoria: 'Outros',
-      subcategoria: '',
-      tamanho: '',
-      gestora: '',
-      canal: '',
-      status: 'Ativo',
-      precoBruto: 0,
-      precoAnterior: 0,
-      custo: 0,
-      margemOrcada: 0,
-      moeda: 'BRL',
-      mes: '2026-05',
-    })
-    setRows((current) => [created, ...current])
-  }
+  const created = await pricingService.create({
+    cliente: 'Cliente Novo',
+    sku: `SKU-${Date.now().toString().slice(-3)}`,
+    codigo: `NP-${Date.now().toString().slice(-3)}`,
+    categoria: 'Outros',
+    subcategoria: '',
+    tamanho: '',
+    gestora: '',
+    canal: '',
+    status: 'Ativo',
+    precoBruto: 0,
+    precoAnterior: 0,
+    precoLiquido: 0,
+    custo: 0,
+    margemOrcada: 0,
+    moeda: 'BRL',
+    mes: '2026-05',
+  })
+
+  setRows((current) => [created, ...current])
+}
 
   return (
     <div className="min-h-screen bg-gray-50 transition-colors duration-200">
@@ -367,7 +369,7 @@ export default function PricingDashboardPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">{item.gestora || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">{item.codigo || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">{item.sku}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">R$ {(item.custo ?? 0).toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">R$ {(item.precoLiquido ?? 0).toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-white">R$ {(item.precoBruto ?? 0).toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
