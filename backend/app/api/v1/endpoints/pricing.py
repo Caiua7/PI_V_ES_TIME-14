@@ -72,9 +72,6 @@ def list_pricing_history(
 
     records = PricingService.list_history(filters)
 
-    print("PRIMEIRO RECORD:")
-    print(records[0])
-
     return PricingHistoryResponse(
         data=[PricingHistoryRecord(**r) for r in records],
         meta=PricingHistoryMeta(
@@ -161,7 +158,7 @@ def update_pricing(
 def delete_pricing(
     record_id: str,
     request: Request,
-    current_user: UsuarioResponse = Depends(require_role("admin")),
+    current_user: UsuarioResponse = Depends(require_role("pricing", "admin")),
 ):
     return PricingService.soft_delete(
         record_id,

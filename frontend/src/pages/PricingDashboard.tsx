@@ -151,11 +151,6 @@ export default function PricingDashboardPage() {
     setFilters((current) => ({ ...current, [key]: value }))
   }
 
-  async function handleDelete(id: string) {
-    await pricingService.remove(id)
-    setRows((current) => current.filter((item) => item.id !== id))
-  }
-
   async function handleNewPrice() {
   const created = await pricingService.create({
     cliente: 'Cliente Novo',
@@ -389,7 +384,22 @@ export default function PricingDashboardPage() {
                             <Edit2 size={18} />
                           </button>
                           <button
-                            onClick={() => void handleDelete(item.id)}
+                            onClick={async () => {
+                              try {
+                                console.log('DELETANDO ID:', item.id)
+
+                                await pricingService.remove(item.id)
+
+                                setRows((current) =>
+                                  current.filter((row) => row.id !== item.id)
+                                )
+
+                                alert('Registro deletado com sucesso!')
+                              } catch (error) {
+                                console.error(error)
+                                alert('Erro ao deletar registro')
+                              }
+                            }}
                             className="p-2 w-9 h-9 flex items-center justify-center rounded-lg hover:bg-red-50 transition-colors transition-transform hover:scale-105 active:scale-95"
                             style={{ color: 'var(--color-danger)' }}
                             title="Excluir"

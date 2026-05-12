@@ -245,18 +245,6 @@ def process_excel_sync(job_id: str, file_path: str, db: Session):
                 month = parse_month(row.get("month"))
                 current_price = parse_float(row.get("current_price"))
 
-                 # DEBUG
-                print("===================================")
-                print("ROW:", row.to_dict())
-
-                print("RAW previous_price:", row.get("previous_price"))
-                print("RAW current_price:", row.get("current_price"))
-
-                previous_price = parse_float(row.get("previous_price"))
-
-                print("PARSED previous_price:", previous_price)
-                print("PARSED current_price:", current_price)
-
                 # Campos obrigatórios
                 if not cliente or not sku or not month or current_price is None or current_price <= 0:
                     print(f"Linha {idx+2} ignorada — campos obrigatórios ausentes: cliente={cliente}, sku={sku}, month={month}, price={current_price}")
@@ -292,8 +280,6 @@ def process_excel_sync(job_id: str, file_path: str, db: Session):
         BATCH_SIZE = 100
         for i in range(0, len(records), BATCH_SIZE):
             batch = records[i:i+BATCH_SIZE]
-            print("BATCH TEST:")
-            print(batch[0])
             supabase.table("pricing_history").insert(batch).execute()
             print(f"Lote {i//BATCH_SIZE + 1} inserido ({len(batch)} registros)")
 
