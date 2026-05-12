@@ -1,3 +1,6 @@
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
+
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -45,6 +48,7 @@ function toDateFromMonth(month: string): Date {
   return new Date(year, (monthPart || 1) - 1, 1)
 }
 
+
 export default function PricingDashboardPage() {
   const navigate = useNavigate()
   const [rows, setRows] = useState<PricingHistoryRecord[]>([])
@@ -55,6 +59,8 @@ export default function PricingDashboardPage() {
   ) => {
 
   const file = event.target.files?.[0]
+
+  
 
   if (!file) return
 
@@ -171,6 +177,42 @@ export default function PricingDashboardPage() {
     mes: '2026-05',
   })
 }
+
+  function handleExportExcel() {
+  const exportData = filteredData.map((item) => ({
+    Cliente: item.cliente,
+    SKU: item.sku,
+    Código: item.codigo,
+    Categoria: item.categoria,
+    Subcategoria: item.subcategoria,
+    Tamanho: item.tamanho,
+    Gestora: item.gestora,
+    'Preço Líquido': item.precoLiquido,
+    'Preço Bruto': item.precoBruto,
+    Custo: item.custo,
+    Margem: item.margemOrcada,
+    Moeda: item.moeda,
+    Mês: item.mes,
+  }))
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData)
+
+  const workbook = XLSX.utils.book_new()
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Pricing')
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array',
+  })
+
+  const data = new Blob(
+    [excelBuffer],
+    { type: 'application/octet-stream' }
+  )
+
+  saveAs(data, 'NeoPrice_Export.xlsx')
+}
   async function handleEdit(item: PricingHistoryRecord) {
   try {
 
@@ -261,7 +303,9 @@ export default function PricingDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="flex items-center justify-center px-3 py-2 rounded-lg font-semibold transition-colors hover:shadow-md hover:bg-gray-100 text-gray-600" title="Exportar">
+            <button 
+            onClick={handleExportExcel}
+            className="flex items-center justify-center px-3 py-2 rounded-lg font-semibold transition-colors hover:shadow-md hover:bg-gray-100 text-gray-600" title="Exportar">
               <Download size={18} />
             </button>
             <button className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold transition-colors hover:shadow-md hover:bg-gray-100 text-gray-600">
@@ -448,3 +492,4 @@ export default function PricingDashboardPage() {
     </div>
   )
 }
+
