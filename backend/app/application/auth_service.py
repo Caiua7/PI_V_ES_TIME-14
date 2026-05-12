@@ -70,7 +70,7 @@ class AuthService:
             "area": payload.areaCargo,
             "email": str(payload.email),
             "senha_hash": hash_password(payload.senha),
-            "role": "pricing",
+            "role": payload.role,
             "is_active": True,
         }
         response = supabase.table(_TABLE_USERS).insert(new_user).execute()

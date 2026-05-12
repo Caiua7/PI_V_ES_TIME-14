@@ -170,8 +170,36 @@ export default function PricingDashboardPage() {
     moeda: 'BRL',
     mes: '2026-05',
   })
+}
+  async function handleEdit(item: PricingHistoryRecord) {
+  try {
 
-  setRows((current) => [created, ...current])
+    const novoPreco = prompt(
+      'Digite o novo preço bruto:',
+      String(item.precoBruto)
+    )
+
+    if (!novoPreco) return
+
+    const updated = await pricingService.update(item.id, {
+      ...item,
+      precoBruto: Number(novoPreco),
+    })
+
+    setRows((current) =>
+      current.map((row) =>
+        row.id === item.id ? updated : row
+      )
+    )
+
+    alert('Registro atualizado com sucesso!')
+
+  } catch (error) {
+
+    console.error(error)
+
+    alert('Erro ao atualizar registro')
+  }
 }
 
   return (
@@ -377,6 +405,7 @@ export default function PricingDashboardPage() {
                             <BarChart3 size={16} />
                           </button>
                           <button
+                            onClick={() => handleEdit(item)}
                             className="p-2 w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors transition-transform hover:scale-105 active:scale-95"
                             style={{ color: 'var(--color-info)' }}
                             title="Editar"

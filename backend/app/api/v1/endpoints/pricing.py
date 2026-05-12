@@ -135,6 +135,9 @@ def update_pricing(
     request: Request,
     current_user: UsuarioResponse = Depends(require_role("pricing", "admin")),
 ):
+    print("USUARIO:", current_user.email)
+    print("ROLE:", current_user.role)
+
     record = PricingService.update(
         record_id,
         payload,
@@ -142,6 +145,7 @@ def update_pricing(
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
+
     return PricingHistoryRecord(**record)
  
  

@@ -62,10 +62,11 @@ export const authService = {
       method: 'POST',
       body: JSON.stringify({
         nome: payload.nome,
-        sobrenome: '',
+        sobrenome: payload.sobrenome,
         email: payload.email,
         senha: payload.senha,
         areaCargo: payload.areaCargo,
+        role: payload.role,
       }),
     })
     return this.login({ email: payload.email, senha: payload.senha, lembrar: true })

@@ -1,4 +1,4 @@
-export type UserRole = 'pricing' | 'pre-sales' | 'cs'
+export type UserRole = 'pricing' | 'pre_sales' | 'customer'
 
 export interface UserProfile {
   id: string
@@ -16,10 +16,11 @@ export interface LoginInput {
 
 export interface RegisterInput {
   nome: string
+  sobrenome: string
   email: string
   senha: string
-  confirmarSenha: string
   areaCargo: string
+  role: 'pricing' | 'pre_sales' | 'customer'
 }
 
 export interface ForgotPasswordInput {

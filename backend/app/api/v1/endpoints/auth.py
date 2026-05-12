@@ -32,12 +32,6 @@ def _build_ctx(request: Request) -> dict:
         "request_id": str(uuid4()),
     }
 
-
-@router.post("/register", response_model=RegisterResponse, status_code=201)
-def register(request: Request, payload: RegisterRequest):
-    return AuthService.register(payload, _build_ctx(request))
-
-
 @router.post("/login", response_model=LoginResponse)
 @limiter.limit("5/minute")
 def login(request: Request, payload: LoginRequest):
@@ -71,3 +65,8 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest):
 def reset_password(request: Request, payload: ResetPasswordRequest):
     AuthService.reset_password(payload, _build_ctx(request))
     return AuthMessageResponse(message="Senha alterada com sucesso.")
+
+@router.post("/register", response_model=RegisterResponse, status_code=201)
+def register(request: Request, payload: RegisterRequest):
+    print(payload)
+    return AuthService.register(payload, _build_ctx(request))

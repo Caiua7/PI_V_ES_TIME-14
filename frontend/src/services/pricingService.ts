@@ -58,19 +58,30 @@ export const pricingService = {
 
   async list(filters: Record<string, string>): Promise<PricingHistoryRecord[]> {
     const params = new URLSearchParams()
+
     Object.entries(filters).forEach(([key, value]) => {
       if (value) params.append(key, value)
     })
+
     const query = params.toString() ? `?${params.toString()}` : ''
-    const response = await apiRequest<ApiResponse>(`/api/v1/pricing/history${query}`)
+
+    const response = await apiRequest<ApiResponse>(
+      `/api/v1/pricing/history${query}`
+    )
+
     return response.data.map(adapt)
   },
 
   async remove(id: string): Promise<void> {
-    await apiRequest(`/api/v1/pricing/history/${id}`, { method: 'DELETE' })
+    await apiRequest(`/api/v1/pricing/history/${id}`, {
+      method: 'DELETE',
+    })
   },
 
-  async create(payload: Omit<PricingHistoryRecord, 'id'>): Promise<PricingHistoryRecord> {
+  async create(
+    payload: Omit<PricingHistoryRecord, 'id'>
+  ): Promise<PricingHistoryRecord> {
+
     const body = {
       cliente: payload.cliente,
       sku: payload.sku,
@@ -87,10 +98,48 @@ export const pricingService = {
       month: payload.mes,
       status: payload.status ?? 'Ativo',
     }
-    const record = await apiRequest<ApiRecord>('/api/v1/pricing/history', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    })
+
+    const record = await apiRequest<ApiRecord>(
+      '/api/v1/pricing/history',
+      {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }
+    )
+
+    return adapt(record)
+  },
+
+  async update(
+    id: string,
+    payload: Partial<PricingHistoryRecord>
+  ): Promise<PricingHistoryRecord> {
+
+    const body = {
+      cliente: payload.cliente,
+      sku: payload.sku,
+      datasul_code: payload.codigo,
+      category: payload.categoria,
+      subcategory: payload.subcategoria,
+      size: payload.tamanho,
+      manager: payload.gestora,
+      current_price: payload.precoBruto,
+      previous_price: payload.precoAnterior,
+      cost: payload.custo,
+      margin: payload.margemOrcada,
+      currency: payload.moeda,
+      month: payload.mes,
+      status: payload.status,
+    }
+
+    const record = await apiRequest<ApiRecord>(
+      `/api/v1/pricing/history/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      }
+    )
+
     return adapt(record)
   },
 }

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional, Literal
 
 import re
 from typing import Optional
@@ -17,20 +18,6 @@ def _validate_senha(v: str) -> str:
 class LoginRequest(BaseModel):
     email: EmailStr
     senha: str = Field(..., min_length=1)
-
-
-class RegisterRequest(BaseModel):
-    nome:      str           = Field(..., min_length=1, max_length=150)
-    sobrenome: Optional[str] = Field(None, max_length=150)
-    areaCargo: Optional[str] = Field(None, max_length=100)
-    email:     EmailStr
-    senha:     str           = Field(..., min_length=8)
-
-    @field_validator("senha", mode="before")
-    @classmethod
-    def validate_senha(cls, v: str) -> str:
-        return _validate_senha(v)
-
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
@@ -89,3 +76,17 @@ class RefreshResponse(BaseModel):
 
 class AuthMessageResponse(BaseModel):
     message: str
+
+class RegisterRequest(BaseModel):
+    nome:      str           = Field(..., min_length=1, max_length=150)
+    sobrenome: Optional[str] = Field(None, max_length=150)
+    areaCargo: Optional[str] = Field(None, max_length=100)
+    email:     EmailStr
+    senha:     str           = Field(..., min_length=8)
+
+    role: Literal["pricing", "pre_sales", "customer"]
+
+    @field_validator("senha", mode="before")
+    @classmethod
+    def validate_senha(cls, v: str) -> str:
+        return _validate_senha(v)

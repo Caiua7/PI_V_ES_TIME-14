@@ -42,12 +42,19 @@ export default function CadastroPage({
 
     setLoading(true)
     try {
+      const roleMap: Record<string, 'pricing' | 'pre_sales' | 'customer'> = {
+        'Pricing Manager': 'pricing',
+        'Pre Sales': 'pre_sales',
+        'Customer Success': 'customer',
+      }
+
       const session = await authService.register({
-        nome: `${nome.trim()} ${sobrenome.trim()}`,
+        nome: nome.trim(),
+        sobrenome: sobrenome.trim(),
         email,
         areaCargo,
         senha,
-        confirmarSenha: senha,
+        role: roleMap[areaCargo],
       })
       setMessage({ type: 'success', text: 'Cadastro concluido com sucesso.' })
       onRegister(session)
