@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    GEMINI_API_KEY: str
+    GEMINI_API_KEY: str = ""
     DATABASE_URL: str
     JWT_SECRET_KEY: str = "dev-only-secret-change-in-production"
     JWT_ALGORITHM: str = "HS256"

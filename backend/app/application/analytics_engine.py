@@ -1,6 +1,6 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from app.models.pricing import PricingHistory
+from collections import defaultdict
+
+from app.infrastructure.supabase_client import supabase
 from app.domain.models.schemas.analytics import (
     AnalyticsCardsResponse,
     AnalyticsEvolutionResponse,
@@ -11,46 +11,99 @@ from app.domain.models.schemas.analytics import (
 )
 
 class AnalyticsEngine:
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self):
+        self._table = "pricing_history"
 
-    def _build_filter_query(self, filters: AnalyticsFilters):
-        # A regra de ouro da operação: ignorar registros com soft delete
-        query = self.db.query(PricingHistory).filter(PricingHistory.deleted_at.is_(None))
-        
-        if filters.sku:
-            query = query.filter(PricingHistory.sku == filters.sku)
-        if filters.category:
-            query = query.filter(PricingHistory.category == filters.category)
-        if filters.date_from:
-            query = query.filter(PricingHistory.month >= filters.date_from)
-        if filters.date_to:
-            query = query.filter(PricingHistory.month <= filters.date_to)
-            
-        return query
+    def _clean(self, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = str(value).strip()
+        return cleaned if cleaned else None
 
-    def get_evolution(self, filters: AnalyticsFilters) -> AnalyticsEvolutionResponse:
-        query = self._build_filter_query(filters)
-        
-        # Agrupa por mês e delega o cálculo pesado para o banco de dados
-        results = (
-            query.with_entities(
-                PricingHistory.month,
-                func.avg(PricingHistory.current_price).label("avg_price"),
-                func.avg(PricingHistory.margin).label("avg_margin")
-            )
-            .group_by(PricingHistory.month)
-            .order_by(PricingHistory.month)
-            .all()
+    def _normalize_month(self, value: str | None) -> str | None:
+        if not value:
+            return None
+        text = str(value).strip()
+        if len(text) >= 7 and text[4] == "-":
+            return text[:7]
+        return text
+
+    def _fetch_rows(self, filters: AnalyticsFilters) -> list[dict]:
+        query = (
+            supabase
+            .table(self._table)
+            .select("month,current_price,margin,sku,cliente,datasul_code,category,subcategory,size,deleted_at")
+            .is_("deleted_at", "null")
         )
 
-        series = []
-        for row in results:
-            series.append(PriceHistoryPoint(
-                mes=row.month,
-                preco=round(row.avg_price or 0, 2),
-                margem=round(row.avg_margin or 0, 2)
-            ))
+        client = self._clean(filters.client)
+        sku = self._clean(filters.sku)
+        datasul_code = self._clean(filters.datasul_code)
+        category = self._clean(filters.category)
+        subcategory = self._clean(filters.subcategory)
+        size = self._clean(filters.size)
+
+        if client:
+            try:
+                query = query.ilike("cliente", client)
+            except AttributeError:
+                query = query.eq("cliente", client)
+        if sku:
+            query = query.eq("sku", sku)
+        if datasul_code:
+            pattern = f"%{datasul_code}%"
+            try:
+                query = query.ilike("datasul_code", pattern)
+            except AttributeError:
+                query = query.like("datasul_code", pattern)
+        if category:
+            try:
+                query = query.ilike("category", category)
+            except AttributeError:
+                query = query.eq("category", category)
+        if subcategory:
+            try:
+                query = query.ilike("subcategory", subcategory)
+            except AttributeError:
+                query = query.eq("subcategory", subcategory)
+        if size:
+            try:
+                query = query.ilike("size", size)
+            except AttributeError:
+                query = query.eq("size", size)
+
+        date_from = self._normalize_month(filters.date_from)
+        date_to = self._normalize_month(filters.date_to)
+        if date_from:
+            query = query.gte("month", date_from)
+        if date_to:
+            query = query.lte("month", date_to)
+
+        response = query.execute()
+        return response.data or []
+
+    def get_evolution(self, filters: AnalyticsFilters) -> AnalyticsEvolutionResponse:
+        rows = self._fetch_rows(filters)
+        by_month: dict[str, dict[str, float]] = defaultdict(lambda: {"sum_price": 0.0, "sum_margin": 0.0, "count": 0.0})
+
+        for row in rows:
+            month = str(row.get("month") or "").strip()
+            if not month:
+                continue
+            price = float(row.get("current_price") or 0)
+            margin = float(row.get("margin") or 0)
+            by_month[month]["sum_price"] += price
+            by_month[month]["sum_margin"] += margin
+            by_month[month]["count"] += 1
+
+        series = [
+            PriceHistoryPoint(
+                mes=month,
+                preco=round(agg["sum_price"] / agg["count"], 2) if agg["count"] else 0.0,
+                margem=round(agg["sum_margin"] / agg["count"], 2) if agg["count"] else 0.0,
+            )
+            for month, agg in sorted(by_month.items(), key=lambda item: item[0])
+        ]
 
         # Determina o modo de visualização para o frontend
         mode = "sku" if filters.sku else "category" if filters.category else "agregado"
@@ -58,22 +111,25 @@ class AnalyticsEngine:
         return AnalyticsEvolutionResponse(mode=mode, series=series)
 
     def get_cards(self, filters: AnalyticsFilters) -> AnalyticsCardsResponse:
-        query = self._build_filter_query(filters)
-        
-        # Consolida os KPIs principais
-        stats = query.with_entities(
-            func.count(PricingHistory.id).label("total_registros"),
-            func.avg(PricingHistory.current_price).label("preco_medio"),
-            func.avg(PricingHistory.margin).label("margem_media")
-        ).first()
+        rows = self._fetch_rows(filters)
+        total = len(rows)
+        sum_price = 0.0
+        sum_margin = 0.0
+
+        for row in rows:
+            sum_price += float(row.get("current_price") or 0)
+            sum_margin += float(row.get("margin") or 0)
+
+        preco_medio = (sum_price / total) if total else 0.0
+        margem_media = (sum_margin / total) if total else 0.0
 
         sku_visible = bool(filters.sku)
         bench_visible = bool(filters.category)
 
         return AnalyticsCardsResponse(
-            registros_analisados=stats.total_registros or 0,
-            preco_medio=round(stats.preco_medio or 0, 2),
-            margem_media=round(stats.margem_media or 0, 2),
+            registros_analisados=total,
+            preco_medio=round(preco_medio, 2),
+            margem_media=round(margem_media, 2),
             variacao_preco=0.0, # Campo preparado para evolução futura (comparação mês a mês)
             sku_card=SkuCardDetail(
                 visible=sku_visible, 
@@ -81,7 +137,7 @@ class AnalyticsEngine:
             ),
             benchmarking_card=BenchmarkingCardDetail(
                 visible=bench_visible, 
-                value=round(stats.margem_media or 0, 2) if bench_visible else None, 
+                value=round(margem_media, 2) if bench_visible else None,
                 category=filters.category if bench_visible else None
             )
         )

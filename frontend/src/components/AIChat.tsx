@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { apiRequest } from '../services/apiClient';
 
 // Tipagem das mensagens
 interface Message {
@@ -32,16 +33,13 @@ export function AIChat() {
     setIsLoading(true);
 
     try {
-      // 2. Chama a API do seu Backend Python (FastAPI)
-      const response = await fetch('http://localhost:8000/api/v1/ai/insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: userMsg.content }),
-      });
-
-      if (!response.ok) throw new Error('Falha na resposta do servidor');
-
-      const data = await response.json();
+      const data = await apiRequest<{ answer: string }>(
+        '/api/v1/ai/insights',
+        {
+          method: 'POST',
+          body: JSON.stringify({ question: userMsg.content }),
+        }
+      );
 
       // 3. Adiciona a resposta do Gemini na tela
       const aiMsg: Message = { id: Date.now() + 1, role: 'ai', content: data.answer };
@@ -49,10 +47,17 @@ export function AIChat() {
 
     } catch (error) {
       console.error(error);
+      const rawMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const isNetworkError =
+        rawMessage.toLowerCase().includes('failed to fetch') ||
+        rawMessage.toLowerCase().includes('networkerror') ||
+        rawMessage.toLowerCase().includes('network error');
       const errorMsg: Message = { 
         id: Date.now() + 1, 
         role: 'ai', 
-        content: 'Ops! Tive um problema de conexão com o servidor de inteligência. Tente novamente.' 
+        content: isNetworkError
+          ? 'Ops! Tive um problema de conexão com o servidor de inteligência. Tente novamente.'
+          : `Ops! Não consegui gerar o insight agora. ${rawMessage}`
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -66,7 +71,8 @@ export function AIChat() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-2xl transition-transform hover:scale-110 flex items-center justify-center"
+          className="text-white rounded-full p-4 shadow-2xl transition-transform hover:scale-110 hover:opacity-90 flex items-center justify-center"
+          style={{ backgroundColor: 'var(--color-primary)' }}
         >
           {/* Ícone de Cérebro/IA Simples feito em SVG */}
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,13 +83,22 @@ export function AIChat() {
 
       {/* Janela do Chat */}
       {isOpen && (
-        <div className="bg-white w-80 sm:w-96 h-[500px] rounded-2xl shadow-2xl flex flex-col border border-gray-200 overflow-hidden">
+        <div
+          className="w-80 sm:w-96 h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          style={{
+            backgroundColor: 'var(--color-bg-card)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
           {/* Header do Chat */}
-          <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
+          <div
+            className="p-4 text-white flex justify-between items-center"
+            style={{ backgroundColor: 'var(--color-primary)' }}
+          >
             <div className="font-bold flex items-center gap-2">
               <span>⚡</span> IA Pricing Insights
             </div>
-            <button onClick={() => setIsOpen(false)} className="hover:text-gray-200 text-xl font-bold">
+            <button onClick={() => setIsOpen(false)} className="hover:opacity-80 text-xl font-bold">
               ×
             </button>
           </div>
@@ -93,9 +108,9 @@ export function AIChat() {
             {messages.map((msg) => (
               <div key={msg.id} className={`max-w-[80%] rounded-xl p-3 text-sm ${
                 msg.role === 'user' 
-                  ? 'bg-blue-600 text-white self-end rounded-tr-none' 
+                  ? 'text-white self-end rounded-tr-none' 
                   : 'bg-gray-200 text-gray-800 self-start rounded-tl-none whitespace-pre-wrap'
-              }`}>
+              }`} style={msg.role === 'user' ? { backgroundColor: 'var(--color-primary)' } : undefined}>
                 {msg.content}
               </div>
             ))}
@@ -115,13 +130,15 @@ export function AIChat() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Pergunte sobre as margens..."
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600"
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--color-primary)' } as React.CSSProperties}
               disabled={isLoading}
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               Env
             </button>

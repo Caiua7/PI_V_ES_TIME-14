@@ -39,7 +39,11 @@ class AnalyticsCardsResponse(BaseModel):
         
 class AnalyticsFilters(BaseModel):
     """Filtros aplicados nas rotas de analytics"""
+    client: Optional[str] = None
     sku: Optional[str] = None
+    datasul_code: Optional[str] = None
     category: Optional[str] = None
+    subcategory: Optional[str] = None
+    size: Optional[str] = None
     date_from: Optional[str] = None
     date_to: Optional[str] = None

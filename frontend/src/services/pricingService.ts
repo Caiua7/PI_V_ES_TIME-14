@@ -1,197 +1,253 @@
-import { apiRequest } from './apiClient'
-import type { PricingHistoryRecord } from '../types'
+import type { DashboardFilters, PricingFilters, PricingHistoryRecord } from '../types'
 
-// Adaptador: converte campos da API (inglês) para o tipo do frontend (português)
-function adapt(record: ApiRecord): PricingHistoryRecord {
-  return {
-    id: record.id,
-    cliente: record.cliente,
-    sku: record.sku,
-    codigo: record.datasul_code ?? '',
-    categoria: record.category ?? '',
-    subcategoria: record.subcategory ?? '',
-    tamanho: record.size ?? '',
-    gestora: record.manager ?? '',
-    canal: record.channel ?? '',
-    status: record.status,
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+const API_V1_PREFIX = '/api/v1'
+const SESSION_KEY = 'neoprice_auth_session'
 
-    precoBruto: record.current_price ?? 0,
-    precoAnterior: record.previous_price ?? 0,
-    precoLiquido: record.previous_price ?? 0,
-
-    custo: record.cost ?? 0,
-    margemOrcada: record.margin ?? 0,
-    moeda: (record.currency ?? 'BRL') as 'BRL' | 'USD' | 'EUR',
-    mes: record.month,
+function getToken(): string | null {
+  const raw = localStorage.getItem(SESSION_KEY)
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as { token?: string; access_token?: string }
+    return parsed.token ?? parsed.access_token ?? null
+  } catch {
+    return null
   }
 }
 
-interface ApiRecord {
-  id: string
-  cliente: string
-  sku: string
-  datasul_code?: string
-  category?: string
-  subcategory?: string
-  size?: string
-  manager?: string
-  channel?: string
-  status: string
-  current_price: number
-  previous_price?: number
-  cost?: number
-  margin?: number
-  currency?: string
-  month: string
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers || {})
+  const token = getToken()
+  if (!headers.has('Content-Type') && init?.body) headers.set('Content-Type', 'application/json')
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  const response = await fetch(`${API_BASE_URL}${API_V1_PREFIX}${path}`, {
+    ...init,
+    headers,
+  })
+
+  if (response.status === 401) {
+    localStorage.removeItem(SESSION_KEY)
+    localStorage.removeItem('neoprice_refresh_token')
+    window.location.replace('/login')
+    throw new Error('Sessão expirada. Faça login novamente.')
+  }
+
+  if (!response.ok) {
+    let message = `Erro HTTP ${response.status}`
+    try {
+      const body = (await response.json()) as { detail?: string | Array<{ msg?: string }>; message?: string }
+      const detail = Array.isArray(body.detail) ? body.detail.map((item) => item.msg).filter(Boolean).join(' | ') : body.detail
+      message = body.message || detail || message
+    } catch {
+      // no-op
+    }
+    throw new Error(message)
+  }
+
+  return (await response.json()) as T
 }
 
-interface ApiResponse {
-  data: ApiRecord[]
-  meta: { total: number }
+type ApiPricingRecord = {
+  id: string
+  cliente: string
+  size?: string | null
+  manager?: string | null
+  datasul_code?: string | null
+  sku: string
+  status?: string | null
+  channel?: string | null
+  current_price: number
+  previous_price?: number | null
+  cost?: number | null
+  currency: 'BRL' | 'USD' | 'EUR'
+  margin?: number | null
+  month: string
+  category?: string | null
+  subcategory?: string | null
+}
+
+function mapFromApi(item: ApiPricingRecord): PricingHistoryRecord {
+  const bruto = Number(item.current_price || 0)
+  const liquido = Number(item.previous_price ?? item.current_price ?? 0)
+  return {
+    id: item.id,
+    cliente: item.cliente || 'Sem cliente',
+    tamanho: item.size || '',
+    gestora: item.manager || '',
+    codigo: item.datasul_code || '',
+    sku: item.sku || '',
+    precoLiquido: liquido,
+    precoBruto: bruto,
+    precoAnterior: Number(item.previous_price ?? 0),
+    custo: Number(item.cost ?? 0),
+    moeda: item.currency || 'BRL',
+    margemOrcada: Number(item.margin || 0),
+    mes: item.month || '',
+    categoria: item.category || 'Sem categoria',
+    subcategoria: item.subcategory || 'Sem subcategoria',
+    canal: item.channel || '',
+    status: item.status || '',
+  }
+}
+
+function mapToApi(payload: Omit<PricingHistoryRecord, 'id'>): {
+  cliente: string
+  sku: string
+  datasul_code: string
+  category: string
+  subcategory: string
+  size: string
+  manager: string
+  channel?: string | null
+  status: string
+  current_price: number
+  previous_price: number
+  cost?: number | null
+  margin: number
+  currency: string
+  month: string
+} {
+  return {
+    cliente: payload.cliente,
+    sku: payload.sku,
+    datasul_code: payload.codigo,
+    category: payload.categoria,
+    subcategory: payload.subcategoria,
+    size: payload.tamanho,
+    manager: payload.gestora,
+    channel: payload.canal || null,
+    status: payload.status || 'Ativo',
+    current_price: payload.precoBruto,
+    previous_price: payload.precoLiquido,
+    cost: typeof payload.custo === 'number' ? payload.custo : null,
+    margin: payload.margemOrcada,
+    currency: payload.moeda,
+    month: payload.mes,
+  }
+}
+
+function applyFilters(rows: PricingHistoryRecord[], filters: PricingFilters): PricingHistoryRecord[] {
+  const query = filters.busca.toLowerCase()
+
+  return rows.filter((item) => {
+    const byQuery =
+      !query ||
+      item.cliente.toLowerCase().includes(query) ||
+      item.codigo.toLowerCase().includes(query) ||
+      item.sku.toLowerCase().includes(query)
+
+    const byCategoria = !filters.categoria || item.categoria === filters.categoria
+    const byCliente = !filters.cliente || item.cliente === filters.cliente
+    const byMes = !filters.mes || item.mes === filters.mes
+
+    return byQuery && byCategoria && byCliente && byMes
+  })
 }
 
 export const pricingService = {
-  async getAll(): Promise<PricingHistoryRecord[]> {
-    const response = await apiRequest<ApiResponse>('/api/v1/pricing/history')
-    return response.data.map(adapt)
+  async list(filters: PricingFilters): Promise<PricingHistoryRecord[]> {
+    const all = await pricingService.getAll()
+    return applyFilters(all, filters)
   },
 
-  async list(filters: Record<string, string>): Promise<PricingHistoryRecord[]> {
-    const params = new URLSearchParams()
+  async getAll(): Promise<PricingHistoryRecord[]> {
+    const data = await apiRequest<{ data: ApiPricingRecord[] }>('/pricing/history')
+    return data.data.map(mapFromApi)
+  },
 
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.append(key, value)
+  async create(payload: Omit<PricingHistoryRecord, 'id'>): Promise<PricingHistoryRecord> {
+    const created = await apiRequest<ApiPricingRecord>('/pricing/history', {
+      method: 'POST',
+      body: JSON.stringify(mapToApi(payload)),
     })
+    return mapFromApi(created)
+  },
 
-    const query = params.toString() ? `?${params.toString()}` : ''
-
-    const response = await apiRequest<ApiResponse>(
-      `/api/v1/pricing/history${query}`
-    )
-
-    return response.data.map(adapt)
+  async update(id: string, payload: PricingHistoryRecord): Promise<PricingHistoryRecord> {
+    const { id: ignoredId, ...rest } = payload
+    void ignoredId
+    const updated = await apiRequest<ApiPricingRecord>(`/pricing/history/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(mapToApi(rest)),
+    })
+    return mapFromApi(updated)
   },
 
   async remove(id: string): Promise<void> {
-    await apiRequest(`/api/v1/pricing/history/${id}`, {
+    await apiRequest<{ message: string; id: string }>(`/pricing/history/${id}`, {
       method: 'DELETE',
     })
   },
 
-  async create(
-    payload: Omit<PricingHistoryRecord, 'id'>
-  ): Promise<PricingHistoryRecord> {
-
-    const body = {
-      cliente: payload.cliente,
-      sku: payload.sku,
-      datasul_code: payload.codigo,
-      category: payload.categoria,
-      subcategory: payload.subcategoria,
-      size: payload.tamanho,
-      manager: payload.gestora,
-      current_price: payload.precoBruto,
-      previous_price: payload.precoAnterior,
-      cost: payload.custo,
-      margin: payload.margemOrcada,
-      currency: payload.moeda,
-      month: payload.mes,
-      status: payload.status ?? 'Ativo',
-    }
-
-    const record = await apiRequest<ApiRecord>(
-      '/api/v1/pricing/history',
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }
-    )
-
-    return adapt(record)
+  async analytics(filters: DashboardFilters): Promise<PricingHistoryRecord[]> {
+    const all = await pricingService.getAll()
+    return applyFilters(all, {
+      busca: '',
+      categoria: filters.categoria,
+      cliente: filters.cliente,
+      mes: filters.periodo,
+    })
   },
 
-  async update(
-    id: string,
-    payload: Partial<PricingHistoryRecord>
-  ): Promise<PricingHistoryRecord> {
+  getClients(): string[] {
+    return []
+  },
 
-    const body = {
-      cliente: payload.cliente,
-      sku: payload.sku,
-      datasul_code: payload.codigo,
-      category: payload.categoria,
-      subcategory: payload.subcategoria,
-      size: payload.tamanho,
-      manager: payload.gestora,
-      current_price: payload.precoBruto,
-      previous_price: payload.precoAnterior,
-      cost: payload.custo,
-      margin: payload.margemOrcada,
-      currency: payload.moeda,
-      month: payload.mes,
-      status: payload.status,
-    }
+  getCategories(): string[] {
+    return []
+  },
 
-    const record = await apiRequest<ApiRecord>(
-      `/api/v1/pricing/history/${id}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify(body),
-      }
-    )
-
-    return adapt(record)
+  getMonths(): string[] {
+    return []
   },
 }
 
-interface EvolutionPoint {
-  mes: string
-  preco: number
-  margem: number
+type AnalyticsFilters = {
+  client?: string
+  sku?: string
+  datasul_code?: string
+  category?: string
+  subcategory?: string
+  size?: string
+  date_from?: string
+  date_to?: string
 }
 
-interface AnalyticsEvolution {
+type AnalyticsEvolutionResponse = {
   mode: string
-  series: EvolutionPoint[]
+  series: Array<{ mes: string; preco: number; margem: number }>
 }
 
-interface AnalyticsCards {
+type AnalyticsCardsResponse = {
   registros_analisados: number
   preco_medio: number
   margem_media: number
-  variacao_preco: number
+  variacao_preco?: number
   sku_card: { visible: boolean; value: string | null }
   benchmarking_card: { visible: boolean; value: number | null; category: string | null }
 }
 
+function buildQuery(filters: AnalyticsFilters): string {
+  const params = new URLSearchParams()
+  if (filters.client) params.set('client', filters.client)
+  if (filters.sku) params.set('sku', filters.sku)
+  if (filters.datasul_code) params.set('datasul_code', filters.datasul_code)
+  if (filters.category) params.set('category', filters.category)
+  if (filters.subcategory) params.set('subcategory', filters.subcategory)
+  if (filters.size) params.set('size', filters.size)
+  if (filters.date_from) params.set('date_from', filters.date_from)
+  if (filters.date_to) params.set('date_to', filters.date_to)
+  const query = params.toString()
+  return query ? `?${query}` : ''
+}
+
 export const analyticsService = {
-  async getEvolution(filters: {
-    sku?: string
-    category?: string
-    date_from?: string
-    date_to?: string
-  }): Promise<AnalyticsEvolution> {
-    const params = new URLSearchParams()
-    if (filters.sku) params.append('sku', filters.sku)
-    if (filters.category) params.append('category', filters.category)
-    if (filters.date_from) params.append('date_from', filters.date_from)
-    if (filters.date_to) params.append('date_to', filters.date_to)
-    const query = params.toString() ? `?${params.toString()}` : ''
-    return apiRequest<AnalyticsEvolution>(`/api/v1/analytics/evolution${query}`)
+  async getEvolution(filters: AnalyticsFilters): Promise<AnalyticsEvolutionResponse> {
+    return apiRequest<AnalyticsEvolutionResponse>(`/analytics/evolution${buildQuery(filters)}`)
   },
 
-  async getCards(filters: {
-    sku?: string
-    category?: string
-    date_from?: string
-    date_to?: string
-  }): Promise<AnalyticsCards> {
-    const params = new URLSearchParams()
-    if (filters.sku) params.append('sku', filters.sku)
-    if (filters.category) params.append('category', filters.category)
-    if (filters.date_from) params.append('date_from', filters.date_from)
-    if (filters.date_to) params.append('date_to', filters.date_to)
-    const query = params.toString() ? `?${params.toString()}` : ''
-    return apiRequest<AnalyticsCards>(`/api/v1/analytics/cards${query}`)
+  async getCards(filters: AnalyticsFilters): Promise<AnalyticsCardsResponse> {
+    return apiRequest<AnalyticsCardsResponse>(`/analytics/cards${buildQuery(filters)}`)
   },
 }

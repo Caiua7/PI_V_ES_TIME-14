@@ -16,7 +16,7 @@ class AIRequest(BaseModel):
 @router.post("/insights")
 def get_ai_insights(request: AIRequest, db: Session = Depends(get_db)):
     try:
-        engine = AnalyticsEngine(db)
+        engine = AnalyticsEngine()
         filtros = AnalyticsFilters()
         
         # 1. Puxar as métricas Macro (KPIs)
