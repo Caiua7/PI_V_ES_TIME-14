@@ -26,6 +26,7 @@ export default function CadastroPage({
   const [email, setEmail] = useState('')
   const [areaCargo, setAreaCargo] = useState('')
   const [senha, setSenha] = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: MessageType; text: string }>({ type: 'info', text: '' })
@@ -38,7 +39,8 @@ export default function CadastroPage({
     if (!sobrenome.trim()) return setMessage({ type: 'error', text: 'Informe o sobrenome.' })
     if (!email.includes('@')) return setMessage({ type: 'error', text: 'Informe um e-mail valido.' })
     if (!areaCargo) return setMessage({ type: 'error', text: 'Selecione a área/time.' })
-    if (senha.length < 6) return setMessage({ type: 'error', text: 'A senha deve ter no minimo 6 caracteres.' })
+    if (senha.length < 8) return setMessage({ type: 'error', text: 'A senha deve ter no minimo 8 caracteres.' })
+    if (senha !== confirmarSenha) return setMessage({ type: 'error', text: 'Senha e confirmacao devem ser iguais.' })
 
     setLoading(true)
     try {
@@ -54,6 +56,7 @@ export default function CadastroPage({
         email,
         areaCargo,
         senha,
+        confirmarSenha,
         role: roleMap[areaCargo],
       })
       setMessage({ type: 'success', text: 'Cadastro concluido com sucesso.' })
@@ -111,9 +114,24 @@ export default function CadastroPage({
           id="cadastro-senha"
           type={showPassword ? 'text' : 'password'}
           label="Senha"
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Mínimo 8 caracteres"
           value={senha}
           onChange={(event) => setSenha(event.target.value)}
+          icon={<Lock size={18} />}
+          rightElement={
+            <button type="button" className="icon-input-btn" onClick={() => setShowPassword((prev) => !prev)}>
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          }
+        />
+
+        <Input
+          id="cadastro-confirmar-senha"
+          type={showPassword ? 'text' : 'password'}
+          label="Confirmar senha"
+          placeholder="Repita a senha"
+          value={confirmarSenha}
+          onChange={(event) => setConfirmarSenha(event.target.value)}
           icon={<Lock size={18} />}
           rightElement={
             <button type="button" className="icon-input-btn" onClick={() => setShowPassword((prev) => !prev)}>

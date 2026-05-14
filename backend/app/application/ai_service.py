@@ -1,8 +1,19 @@
-from google import genai
+from functools import lru_cache
+
 from app.core.config import settings
 
-# Inicializamos o cliente com a chave que está segura no seu config
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
+@lru_cache(maxsize=1)
+def _get_client():
+    api_key = (settings.GEMINI_API_KEY or "").strip()
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY não configurada no backend.")
+
+    try:
+        from google import genai
+    except Exception as exc:
+        raise RuntimeError("Dependência 'google-genai' não instalada no backend.") from exc
+
+    return genai.Client(api_key=api_key)
 
 def generate_pricing_insight(user_question: str, db_context: str = "") -> str:
     """
@@ -18,9 +29,9 @@ def generate_pricing_insight(user_question: str, db_context: str = "") -> str:
     prompt_final = f"{system_instruction}Pergunta do usuário: {user_question}"
     
     # Chamada para o modelo mais rápido e eficiente (flash)
-    response = client.models.generate_content(
+    response = _get_client().models.generate_content(
         model='gemini-2.5-flash',
         contents=prompt_final
     )
     
-    return response.text
+    return response.text or ""

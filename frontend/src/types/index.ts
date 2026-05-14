@@ -1,4 +1,4 @@
-export type UserRole = 'pricing' | 'pre_sales' | 'customer'
+export type UserRole = 'pricing' | 'pre_sales' | 'customer' | 'pre-sales' | 'cs' | 'admin'
 
 export interface UserProfile {
   id: string
@@ -16,10 +16,11 @@ export interface LoginInput {
 
 export interface RegisterInput {
   nome: string
-  sobrenome: string
   email: string
   senha: string
+  confirmarSenha: string
   areaCargo: string
+  sobrenome?: string
   role: 'pricing' | 'pre_sales' | 'customer'
 }
 
@@ -28,30 +29,30 @@ export interface ForgotPasswordInput {
 }
 
 export interface AuthSession {
-  access_token: string
-  refresh_token: string
+  token: string
   usuario: UserProfile
 }
 
 export interface PricingHistoryRecord {
   id: string
   cliente: string
-  sku: string
-  codigo: string
-  categoria: string
-  subcategoria: string
   tamanho: string
   gestora: string
-  canal: string
-  status: string
-  precoBruto: number
+  codigo: string
+  sku: string
   precoLiquido: number
-  precoAnterior: number
-  custo: number
-  margemOrcada: number
+  precoBruto: number
+  precoAnterior?: number
+  custo?: number
   moeda: 'BRL' | 'USD' | 'EUR'
+  margemOrcada: number
   mes: string
+  categoria: string
+  subcategoria: string
+  canal?: string
+  status?: string
 }
+
 export interface PricingFilters {
   busca: string
   categoria: string

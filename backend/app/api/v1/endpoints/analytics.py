@@ -1,10 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy.orm import Session
 from typing import Optional
 
-# 1. Importação CORRETA do banco de dados:
-from app.infrastructure.database import get_db
-# 2. Importação CORRETA da autenticação:
 from app.api.dependencies import get_current_user
 
 from app.application.analytics_engine import AnalyticsEngine
@@ -21,40 +17,52 @@ router = APIRouter()
 @limiter.limit("10/minute")
 def get_analytics_cards(
     request: Request,
+    client: Optional[str] = Query(None),
     sku: Optional[str] = Query(None),
+    datasul_code: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
+    subcategory: Optional[str] = Query(None),
+    size: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
-    db: Session = Depends(get_db),
-    # 3. Dependência corrigida aqui:
     current_user = Depends(get_current_user)
 ):
     filters = AnalyticsFilters(
+        client=client,
         sku=sku,
+        datasul_code=datasul_code,
         category=category,
+        subcategory=subcategory,
+        size=size,
         date_from=date_from,
         date_to=date_to
     )
-    engine = AnalyticsEngine(db)
+    engine = AnalyticsEngine()
     return engine.get_cards(filters)
 
 @router.get("/evolution", response_model=AnalyticsEvolutionResponse)
 @limiter.limit("10/minute")
 def get_analytics_evolution(
     request: Request,
+    client: Optional[str] = Query(None),
     sku: Optional[str] = Query(None),
+    datasul_code: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
+    subcategory: Optional[str] = Query(None),
+    size: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
-    db: Session = Depends(get_db),
-    # 4. Dependência corrigida aqui:
     current_user = Depends(get_current_user)
 ):
     filters = AnalyticsFilters(
+        client=client,
         sku=sku,
+        datasul_code=datasul_code,
         category=category,
+        subcategory=subcategory,
+        size=size,
         date_from=date_from,
         date_to=date_to
     )
-    engine = AnalyticsEngine(db)
+    engine = AnalyticsEngine()
     return engine.get_evolution(filters)
