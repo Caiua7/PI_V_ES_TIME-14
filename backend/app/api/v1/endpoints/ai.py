@@ -27,7 +27,7 @@ def get_ai_insights(request: AIRequest):
         response = (
             supabase
             .table("pricing_history")
-            .select("month,cliente,manager,category,sku,current_price,margin,deleted_at")
+            .select("""month,cliente,manager,category,subcategory,sku,datasul_code,size,channel,status,current_price,previous_price,cost,margin,currency,deleted_at""")
             .is_("deleted_at", "null")
             .limit(5000)
             .execute()
@@ -37,7 +37,22 @@ def get_ai_insights(request: AIRequest):
         linhas_detalhadas = []
         for row in raw_data:
             linhas_detalhadas.append(
-                f"Data: {row.get('month')} | Cliente: {row.get('cliente')} | Gestora: {row.get('manager')} | Categoria: {row.get('category')} | SKU: {row.get('sku')} | Preço Liquido: R${row.get('current_price')} | Margem: {row.get('margin')}%"
+               f"""Month: {row.get('month')}
+                Cliente: {row.get('cliente')}
+                Manager: {row.get('manager')}
+                Category: {row.get('category')}
+                Subcategory: {row.get('subcategory')}
+                SKU: {row.get('sku')}
+                Datasul Code: {row.get('datasul_code')}
+                Size: {row.get('size')}
+                Channel: {row.get('channel')}
+                Status: {row.get('status')}
+                Current Price: {row.get('current_price')}
+                Previous Price: {row.get('previous_price')}
+                Cost: {row.get('cost')}
+                Margin: {row.get('margin')}
+                Currency: {row.get('currency')}
+                """
             )
         
         texto_bruto = "\n".join(linhas_detalhadas)
@@ -48,7 +63,7 @@ def get_ai_insights(request: AIRequest):
         Você está analisando a base de dados de Pricing da empresa. 
         - 'Preço Liquido' refere-se à coluna current_price.
         - 'Gestora' refere-se ao manager da conta.
-        - 'SKU' é o código único do produto.
+        - 'SKU' contém o nome completo e descrição do produto.
         
         RESUMO DOS KPIS ATUAIS (CARDS DO DASHBOARD):
         {cards_data.model_dump_json()}

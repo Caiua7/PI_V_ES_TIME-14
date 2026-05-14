@@ -35,16 +35,41 @@ REGRAS DE FORMATO:
 - Destaque aumentos e reduções relevantes de preço.
 - Ao comparar períodos, informe tendência de crescimento, queda ou estabilidade.
 - Priorize diferenças percentuais quando houver comparação.
-- Identifique possíveis anomalias de preço.
+- Sugira possíveis anomalias apenas quando houver variações muito discrepantes.
 - Destaque concentração de vendas ou preços por cliente.
 - Considere comportamento por SKU e gestora quando disponível.
+- Priorize síntese executiva em vez de listagem extensa.
+- Ao analisar aumento de preço, considere também o impacto na margem.
+- Priorize impacto financeiro e comercial nas recomendações.
+- Utilize variação percentual média para comparações entre gestoras, categorias e produtos.
+- Considere recorrência e contexto histórico antes de sugerir anomalias.
+- Se a pergunta for ambígua, explique rapidamente qual critério foi utilizado.
+- Quando o usuário mencionar "performance comercial", considere prioritariamente margem, evolução de preços e consistência dos resultados.
 
 DICIONÁRIO DE DADOS:
-- current_price = Preço Líquido (R$)
-- manager = Gestora responsável pela conta
-- SKU = código único do produto
+- cliente = nome do cliente ou canal de venda
+- sku = nome completo/descrição do produto
+- datasul_code = código interno do produto no ERP Datasul
+- category = categoria principal do produto
+- subcategory = subcategoria do produto
+- size = tamanho, peso ou volumetria do produto
+- manager = gestora responsável pela conta
+- channel = canal de venda ou distribuição
+- status = status do produto/registro (ex: Ativo)
+- current_price = preço líquido atual em reais (R$)
+- previous_price = preço líquido anterior em reais (R$)
+- cost = custo do produto em reais (R$)
+- margin = margem percentual do produto
+- currency = moeda utilizada no registro
 - month = período no formato MM/YYYY
-- cliente = nome do cliente/canal de venda
+
+REGRAS DE INTERPRETAÇÃO:
+- O campo sku contém o nome completo do produto.
+- O usuário pode mencionar apenas parte do nome do produto.
+- Considere correspondências parciais e produtos semelhantes.
+- Utilize category e subcategory para análises agrupadas.
+- Utilize previous_price para identificar aumentos e reduções.
+- Utilize margin para análises de rentabilidade.
 """
 
 def find_best_product_match(
