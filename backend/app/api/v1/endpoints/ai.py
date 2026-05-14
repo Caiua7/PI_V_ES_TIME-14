@@ -1,12 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.infrastructure.database import get_db
 from app.application import ai_service
 from app.application.analytics_engine import AnalyticsEngine
 from app.domain.models.schemas.analytics import AnalyticsFilters
-from app.models.pricing import PricingHistory
+from app.infrastructure.supabase_client import supabase
 
 router = APIRouter()
 
@@ -14,7 +12,7 @@ class AIRequest(BaseModel):
     question: str
 
 @router.post("/insights")
-def get_ai_insights(request: AIRequest, db: Session = Depends(get_db)):
+def get_ai_insights(request: AIRequest):
     try:
         engine = AnalyticsEngine()
         filtros = AnalyticsFilters()
@@ -26,12 +24,20 @@ def get_ai_insights(request: AIRequest, db: Session = Depends(get_db)):
         evolution_data = engine.get_evolution(filtros) 
         
         # 3. Puxar os dados brutos (Aumentei para 5000 para garantir cobertura na apresentação)
-        raw_data = db.query(PricingHistory).filter(PricingHistory.deleted_at.is_(None)).limit(5000).all()
+        response = (
+            supabase
+            .table("pricing_history")
+            .select("month,cliente,manager,category,sku,current_price,margin,deleted_at")
+            .is_("deleted_at", "null")
+            .limit(5000)
+            .execute()
+        )
+        raw_data = response.data or []
         
         linhas_detalhadas = []
         for row in raw_data:
             linhas_detalhadas.append(
-                f"Data: {row.month} | Cliente: {row.cliente} | Gestora: {row.manager} | Categoria: {row.category} | SKU: {row.sku} | Preço Liquido: R${row.current_price} | Margem: {row.margin}%"
+                f"Data: {row.get('month')} | Cliente: {row.get('cliente')} | Gestora: {row.get('manager')} | Categoria: {row.get('category')} | SKU: {row.get('sku')} | Preço Liquido: R${row.get('current_price')} | Margem: {row.get('margin')}%"
             )
         
         texto_bruto = "\n".join(linhas_detalhadas)
