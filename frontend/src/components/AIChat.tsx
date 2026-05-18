@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Send } from 'lucide-react';
 import { apiRequest } from '../services/apiClient';
 
 interface Message {
@@ -154,8 +155,9 @@ export function AIChat() {
               disabled={isLoading || !input.trim()}
               className="text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
               style={{ backgroundColor: 'var(--color-primary)' }}
+              title="Enviar"
             >
-              Env
+              <Send size={18} />
             </button>
           </div>
         </div>
